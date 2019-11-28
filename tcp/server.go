@@ -32,6 +32,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+
+
 	"io"
 	"math/rand"
 	"net"
@@ -51,9 +53,8 @@ import (
 	"github.com/frankhang/util/util"
 
 	"github.com/blacktear23/go-proxyprotocol"
-	"github.com/pingcap/errors"
-	"github.com/pingcap/parser/mysql"
-	"github.com/pingcap/parser/terror"
+	"github.com/frankhang/util/errors"
+
 
 	"go.uber.org/zap"
 )
@@ -80,11 +81,11 @@ func init() {
 }
 
 var (
-	errUnknownFieldType  = terror.ClassServer.New(codeUnknownFieldType, "unknown field type")
-	errInvalidSequence   = terror.ClassServer.New(codeInvalidSequence, "invalid sequence")
-	errInvalidType       = terror.ClassServer.New(codeInvalidType, "invalid type")
-	errNotAllowedCommand = terror.ClassServer.New(codeNotAllowedCommand, "the used command is not allowed with this TiDB version")
-	errAccessDenied      = terror.ClassServer.New(codeAccessDenied, mysql.MySQLErrName[mysql.ErrAccessDenied])
+	//errUnknownFieldType  = terror.ClassServer.New(codeUnknownFieldType, "unknown field type")
+	//errInvalidSequence   = terror.ClassServer.New(codeInvalidSequence, "invalid sequence")
+	//errInvalidType       = terror.ClassServer.New(codeInvalidType, "invalid type")
+	//errNotAllowedCommand = terror.ClassServer.New(codeNotAllowedCommand, "the used command is not allowed with this TiDB version")
+	//errAccessDenied      = terror.ClassServer.New(codeAccessDenied, mysql.MySQLErrName[mysql.ErrAccessDenied])
 )
 
 // DefaultCapability is the capability of the server when it is created using the default configuration.

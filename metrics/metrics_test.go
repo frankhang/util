@@ -14,11 +14,12 @@
 package metrics
 
 import (
+	"github.com/pingcap/parser/terror"
 	"testing"
 
-	. "github.com/pingcap/check"
-	"github.com/pingcap/errors"
-	"github.com/pingcap/parser/terror"
+	. "github.com/tiancaiamao/check"
+	"github.com/frankhang/util/errors"
+
 )
 
 func TestT(t *testing.T) {
@@ -45,7 +46,7 @@ func (s *testSuite) TestRetLabel(c *C) {
 	c.Assert(RetLabel(errors.New("test error")), Equals, opFailed)
 }
 
-func (s *testSuite) TestExecuteErrorToLabel(c *C) {
-	c.Assert(ExecuteErrorToLabel(errors.New("test")), Equals, `unknown`)
-	c.Assert(ExecuteErrorToLabel(terror.ErrResultUndetermined), Equals, `global:2`)
-}
+//func (s *testSuite) TestExecuteErrorToLabel(c *C) {
+//	c.Assert(ExecuteErrorToLabel(errors.New("test")), Equals, `unknown`)
+//	c.Assert(ExecuteErrorToLabel(terror.ErrResultUndetermined), Equals, `global:2`)
+//}

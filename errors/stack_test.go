@@ -66,8 +66,8 @@ func TestFrameFormat(t *testing.T) {
 	}, {
 		Frame(initpc),
 		"%+s",
-		"github.com/pingcap/errors.init\n" +
-			"\t.+/github.com/pingcap/errors/stack_test.go",
+		"github.com/frankhang/util/errors.init\n" +
+			"\t.+/github.com/frankhang/util/errors/stack_test.go",
 	}, {
 		Frame(0),
 		"%s",
@@ -113,8 +113,8 @@ func TestFrameFormat(t *testing.T) {
 	}, {
 		Frame(initpc),
 		"%+v",
-		"github.com/pingcap/errors.init\n" +
-			"\t.+/github.com/pingcap/errors/stack_test.go:10",
+		"github.com/frankhang/util/errors.init\n" +
+			"\t.+/github.com/frankhang/util/errors/stack_test.go:10",
 	}, {
 		Frame(0),
 		"%v",
@@ -132,7 +132,7 @@ func TestFuncname(t *testing.T) {
 	}{
 		{"", ""},
 		{"runtime.main", "main"},
-		{"github.com/pingcap/errors.funcname", "funcname"},
+		{"github.com/frankhang/util/errors.funcname", "funcname"},
 		{"funcname", "funcname"},
 		{"io.copyBuffer", "copyBuffer"},
 		{"main.(*R).Write", "(*R).Write"},
@@ -153,25 +153,25 @@ func TestStackTrace(t *testing.T) {
 		want []string
 	}{{
 		New("ooh"), []string{
-			"github.com/pingcap/errors.TestStackTrace\n" +
-				"\t.+/github.com/pingcap/errors/stack_test.go:155",
+			"github.com/frankhang/util/errors.TestStackTrace\n" +
+				"\t.+/github.com/frankhang/util/errors/stack_test.go:155",
 		},
 	}, {
 		Annotate(New("ooh"), "ahh"), []string{
-			"github.com/pingcap/errors.TestStackTrace\n" +
-				"\t.+/github.com/pingcap/errors/stack_test.go:160", // this is the stack of Wrap, not New
+			"github.com/frankhang/util/errors.TestStackTrace\n" +
+				"\t.+/github.com/frankhang/util/errors/stack_test.go:160", // this is the stack of Wrap, not New
 		},
 	}, {
 		Cause(Annotate(New("ooh"), "ahh")), []string{
-			"github.com/pingcap/errors.TestStackTrace\n" +
-				"\t.+/github.com/pingcap/errors/stack_test.go:165", // this is the stack of New
+			"github.com/frankhang/util/errors.TestStackTrace\n" +
+				"\t.+/github.com/frankhang/util/errors/stack_test.go:165", // this is the stack of New
 		},
 	}, {
 		func() error { return New("ooh") }(), []string{
-			`github.com/pingcap/errors.(func·009|TestStackTrace.func1)` +
-				"\n\t.+/github.com/pingcap/errors/stack_test.go:170", // this is the stack of New
-			"github.com/pingcap/errors.TestStackTrace\n" +
-				"\t.+/github.com/pingcap/errors/stack_test.go:170", // this is the stack of New's caller
+			`github.com/frankhang/util/errors.(func·009|TestStackTrace.func1)` +
+				"\n\t.+/github.com/frankhang/util/errors/stack_test.go:170", // this is the stack of New
+			"github.com/frankhang/util/errors.TestStackTrace\n" +
+				"\t.+/github.com/frankhang/util/errors/stack_test.go:170", // this is the stack of New's caller
 		},
 	}, {
 		Cause(func() error {
@@ -179,12 +179,12 @@ func TestStackTrace(t *testing.T) {
 				return Errorf("hello %s", fmt.Sprintf("world"))
 			}()
 		}()), []string{
-			`github.com/pingcap/errors.(func·010|TestStackTrace.func2.1)` +
-				"\n\t.+/github.com/pingcap/errors/stack_test.go:179", // this is the stack of Errorf
-			`github.com/pingcap/errors.(func·011|TestStackTrace.func2)` +
-				"\n\t.+/github.com/pingcap/errors/stack_test.go:180", // this is the stack of Errorf's caller
-			"github.com/pingcap/errors.TestStackTrace\n" +
-				"\t.+/github.com/pingcap/errors/stack_test.go:181", // this is the stack of Errorf's caller's caller
+			`github.com/frankhang/util/errors.(func·010|TestStackTrace.func2.1)` +
+				"\n\t.+/github.com/frankhang/util/errors/stack_test.go:179", // this is the stack of Errorf
+			`github.com/frankhang/util/errors.(func·011|TestStackTrace.func2)` +
+				"\n\t.+/github.com/frankhang/util/errors/stack_test.go:180", // this is the stack of Errorf's caller
+			"github.com/frankhang/util/errors.TestStackTrace\n" +
+				"\t.+/github.com/frankhang/util/errors/stack_test.go:181", // this is the stack of Errorf's caller's caller
 		},
 	}}
 	for i, tt := range tests {
@@ -262,10 +262,10 @@ func TestStackTraceFormat(t *testing.T) {
 		stackTrace()[:2],
 		"%+v",
 		"\n" +
-			"github.com/pingcap/errors.stackTrace\n" +
-			"\t.+/github.com/pingcap/errors/stack_test.go:211\n" +
-			"github.com/pingcap/errors.TestStackTraceFormat\n" +
-			"\t.+/github.com/pingcap/errors/stack_test.go:262",
+			"github.com/frankhang/util/errors.stackTrace\n" +
+			"\t.+/github.com/frankhang/util/errors/stack_test.go:211\n" +
+			"github.com/frankhang/util/errors.TestStackTraceFormat\n" +
+			"\t.+/github.com/frankhang/util/errors/stack_test.go:262",
 	}, {
 		stackTrace()[:2],
 		"%#v",
