@@ -16,7 +16,7 @@ package arena
 import (
 	"testing"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 )
 
 func TestT(t *testing.T) {

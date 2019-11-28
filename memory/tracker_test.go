@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/cznic/mathutil"
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 	"github.com/pingcap/parser/mysql"
 	"github.com/frankhang/util/logutil"
 	"github.com/frankhang/util/stringutil"

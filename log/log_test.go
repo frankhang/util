@@ -14,7 +14,7 @@
 package log
 
 import (
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 )
 
 var _ = Suite(&testLogSuite{})

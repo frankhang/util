@@ -17,7 +17,7 @@ import (
 	"bytes"
 	"time"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 	"github.com/frankhang/util/errors"
 
 

@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/frankhang/util/check"
+	"github.com/tiancaiamao/check"
 )
 
 func interestingGoroutines() (gs []string) {

@@ -17,7 +17,7 @@ import (
 	"bytes"
 	"testing"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 )
 
 func TestT(t *testing.T) {

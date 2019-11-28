@@ -25,7 +25,7 @@ import (
 	"time"
 	"unsafe"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 	"github.com/frankhang/util/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

@@ -15,7 +15,7 @@ package linux_test
 import (
 	"testing"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 	"github.com/frankhang/util/sys/linux"
 )
 

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/frankhang/util/check"
+	. "github.com/tiancaiamao/check"
 	zaplog "github.com/pingcap/log"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/zap"
