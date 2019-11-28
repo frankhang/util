@@ -15,7 +15,7 @@ package linux_test
 import (
 	"testing"
 
-	. "github.com/pingcap/check"
+	. "github.com/frankhang/util/check"
 	"github.com/frankhang/util/sys/linux"
 )
 

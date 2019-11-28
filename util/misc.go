@@ -14,14 +14,13 @@
 package util
 
 import (
+	"github.com/pingcap/parser"
+	"github.com/pingcap/parser/mysql"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/pingcap/errors"
-	"github.com/pingcap/parser"
-	"github.com/pingcap/parser/mysql"
-	"github.com/pingcap/parser/terror"
+	"github.com/frankhang/util/errors"
 	"github.com/frankhang/util/logutil"
 	"go.uber.org/zap"
 )
@@ -115,10 +114,10 @@ func SyntaxError(err error) error {
 
 	// If the error is already a terror with stack, pass it through.
 	if errors.HasStack(err) {
-		cause := errors.Cause(err)
-		if _, ok := cause.(*terror.Error); ok {
-			return err
-		}
+		//cause := errors.Cause(err)
+		//if _, ok := cause.(*terror.Error); ok {
+		//	return err
+		//}
 	}
 
 	return parser.ErrParse.GenWithStackByArgs(syntaxErrorPrefix, err.Error())

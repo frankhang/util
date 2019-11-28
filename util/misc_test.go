@@ -17,11 +17,9 @@ import (
 	"bytes"
 	"time"
 
-	. "github.com/pingcap/check"
-	"github.com/pingcap/errors"
-	"github.com/pingcap/parser"
-	"github.com/pingcap/parser/mysql"
-	"github.com/pingcap/parser/terror"
+	. "github.com/frankhang/util/check"
+	"github.com/frankhang/util/errors"
+
 
 	"github.com/frankhang/util/testleak"
 )

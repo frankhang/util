@@ -37,24 +37,11 @@ package tcp
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/pingcap/tidb/types"
 
-	//"github.com/pingcap/tidb/types"
-	//"github.com/pingcap/tidb/util/chunk"
 	"io"
-	"math"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/frankhang/util/db/config"
-
-	//"github.com/pingcap/errors"
-	//"github.com/pingcap/parser/mysql"
-
-	//"github.com/pingcap/tidb/types"
-	//"github.com/pingcap/tidb/util/chunk"
-	//"github.com/frankhang/util/hack"
 )
 
 func parseNullTermString(b []byte) (str []byte, remain []byte) {
@@ -232,34 +219,17 @@ const (
 	expFormatSmall = 1e-15
 )
 
-func appendFormatFloat(in []byte, fVal float64, prec, bitSize int) []byte {
-	absVal := math.Abs(fVal)
-	var out []byte
-	if prec == types.UnspecifiedLength && (absVal >= expFormatBig || (absVal != 0 && absVal < expFormatSmall)) {
-		out = strconv.AppendFloat(in, fVal, 'e', prec, bitSize)
-		valStr := out[len(in):]
-		// remove the '+' from the string for compatibility.
-		plusPos := bytes.IndexByte(valStr, '+')
-		if plusPos > 0 {
-			plusPosInOut := len(in) + plusPos
-			out = append(out[:plusPosInOut], out[plusPosInOut+1:]...)
-		}
-	} else {
-		out = strconv.AppendFloat(in, fVal, 'f', prec, bitSize)
-	}
-	return out
-}
 
 // CorsHandler adds Cors Header if `cors` config is set.
 type CorsHandler struct {
 	handler http.Handler
-	cfg     *config.Config
+	//cfg     *config.Config
 }
 
 func (h CorsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if h.cfg.Cors != "" {
-		w.Header().Set("Access-Control-Allow-Origin", h.cfg.Cors)
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-	}
+	//if h.cfg.Cors != "" {
+	//	w.Header().Set("Access-Control-Allow-Origin", h.cfg.Cors)
+	//	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	//}
 	h.handler.ServeHTTP(w, req)
 }

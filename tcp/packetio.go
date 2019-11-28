@@ -39,9 +39,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/pingcap/errors"
-	"github.com/pingcap/parser/mysql"
-	"github.com/pingcap/parser/terror"
+	"github.com/frankhang/util/errors"
 )
 
 const defaultWriterSize = 16 * 1024
@@ -107,7 +105,11 @@ func (p *packetIO) readPacket() ([]byte, error) {
 		return nil, errors.Trace(err)
 	}
 
-	if len(data) < mysql.MaxPayloadLen {
+	//if len(data) < mysql.MaxPayloadLen {
+	//	return data, nil
+	//}
+
+	if len(data) < 1024 {
 		return data, nil
 	}
 
@@ -120,7 +122,11 @@ func (p *packetIO) readPacket() ([]byte, error) {
 
 		data = append(data, buf...)
 
-		if len(buf) < mysql.MaxPayloadLen {
+		//if len(buf) < mysql.MaxPayloadLen {
+		//	break
+		//}
+
+		if len(buf) < 1024 {
 			break
 		}
 	}
@@ -132,22 +138,22 @@ func (p *packetIO) readPacket() ([]byte, error) {
 func (p *packetIO) writePacket(data []byte) error {
 	length := len(data) - 4
 
-	for length >= mysql.MaxPayloadLen {
+	for length >= 1024 /* mysql.MaxPayloadLen */ {
 		data[0] = 0xff
 		data[1] = 0xff
 		data[2] = 0xff
 
 		data[3] = p.sequence
 
-		if n, err := p.bufWriter.Write(data[:4+mysql.MaxPayloadLen]); err != nil {
-			return errors.Trace(mysql.ErrBadConn)
-		} else if n != (4 + mysql.MaxPayloadLen) {
-			return errors.Trace(mysql.ErrBadConn)
-		} else {
-			p.sequence++
-			length -= mysql.MaxPayloadLen
-			data = data[mysql.MaxPayloadLen:]
-		}
+		//if n, err := p.bufWriter.Write(data[:4+mysql.MaxPayloadLen]); err != nil {
+		//	return errors.Trace(mysql.ErrBadConn)
+		//} else if n != (4 + mysql.MaxPayloadLen) {
+		//	return errors.Trace(mysql.ErrBadConn)
+		//} else {
+		//	p.sequence++
+		//	length -= mysql.MaxPayloadLen
+		//	data = data[mysql.MaxPayloadLen:]
+		//}
 	}
 
 	data[0] = byte(length)
@@ -155,15 +161,16 @@ func (p *packetIO) writePacket(data []byte) error {
 	data[2] = byte(length >> 16)
 	data[3] = p.sequence
 
-	if n, err := p.bufWriter.Write(data); err != nil {
-		terror.Log(errors.Trace(err))
-		return errors.Trace(mysql.ErrBadConn)
-	} else if n != len(data) {
-		return errors.Trace(mysql.ErrBadConn)
-	} else {
-		p.sequence++
-		return nil
-	}
+	//if n, err := p.bufWriter.Write(data); err != nil {
+	//	terror.Log(errors.Trace(err))
+	//	return errors.Trace(mysql.ErrBadConn)
+	//} else if n != len(data) {
+	//	return errors.Trace(mysql.ErrBadConn)
+	//} else {
+	//	p.sequence++
+	//	return nil
+	//}
+	return nil
 }
 
 func (p *packetIO) flush() error {

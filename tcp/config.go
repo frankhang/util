@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package tcp
 
 import (
 	"bytes"
@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/pingcap/errors"
-	zaplog "github.com/pingcap/log"
+	"github.com/frankhang/util/errors"
+	//zaplog "github.com/frankhang/util/log"
 	"github.com/frankhang/util/logutil"
 	tracing "github.com/uber/jaeger-client-go/config"
 	"go.uber.org/atomic"
@@ -718,9 +718,9 @@ var TableLockDelayClean = func() uint64 {
 }
 
 // ToLogConfig converts *Log to *logutil.LogConfig.
-func (l *Log) ToLogConfig() *logutil.LogConfig {
-	return logutil.NewLogConfig(l.Level, l.Format, l.SlowQueryFile, l.File, l.getDisableTimestamp(), func(config *zaplog.Config) { config.DisableErrorVerbose = l.getDisableErrorStack() })
-}
+//func (l *Log) ToLogConfig() *logutil.LogConfig {
+//	return logutil.NewLogConfig(l.Level, l.Format, l.SlowQueryFile, l.File, l.getDisableTimestamp(), func(config *zaplog.Config) { config.DisableErrorVerbose = l.getDisableErrorStack() })
+//}
 
 // ToTracingConfig converts *OpenTracing to *tracing.Configuration.
 func (t *OpenTracing) ToTracingConfig() *tracing.Configuration {

@@ -31,11 +31,8 @@ package tcp
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -48,21 +45,15 @@ import (
 	// For pprof
 	_ "net/http/pprof"
 
-	"github.com/frankhang/util/metrics"
 	"github.com/frankhang/util/logutil"
-	"github.com/frankhang/util/db/config"
+	"github.com/frankhang/util/metrics"
 	"github.com/frankhang/util/sys/linux"
 	"github.com/frankhang/util/util"
-
 
 	"github.com/blacktear23/go-proxyprotocol"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/parser/terror"
-
-
-	//"github.com/pingcap/tidb/sessionctx/variable"
-
 
 	"go.uber.org/zap"
 )
@@ -106,7 +97,7 @@ const defaultCapability = mysql.ClientLongPassword | mysql.ClientLongFlag |
 
 // Server is the MySQL protocol server
 type Server struct {
-	cfg               *config.Config
+	cfg               *Config
 	tlsConfig         *tls.Config
 	driver            IDriver
 	listener          net.Listener
@@ -160,21 +151,23 @@ func (s *Server) newConn(conn net.Conn) *clientConn {
 }
 
 func (s *Server) isUnixSocket() bool {
-	return s.cfg.Socket != ""
+	//return s.cfg.Socket != ""
+	return false
 }
 
 func (s *Server) forwardUnixSocketToTCP() {
-	addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
+	//addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
+	addr := fmt.Sprintf("%s:%d", "localhost", "3306")
 	for {
 		if s.listener == nil {
 			return // server shutdown has started
 		}
 		if uconn, err := s.socket.Accept(); err == nil {
-			logutil.BgLogger().Info("server socket forwarding", zap.String("from", s.cfg.Socket), zap.String("to", addr))
+			//logutil.BgLogger().Info("server socket forwarding", zap.String("from", s.cfg.Socket), zap.String("to", addr))
 			go s.handleForwardedConnection(uconn, addr)
 		} else {
 			if s.listener != nil {
-				logutil.BgLogger().Error("server failed to forward", zap.String("from", s.cfg.Socket), zap.String("to", addr), zap.Error(err))
+				//logutil.BgLogger().Error("server failed to forward", zap.String("from", s.cfg.Socket), zap.String("to", addr), zap.Error(err))
 			}
 		}
 	}
@@ -197,7 +190,7 @@ func (s *Server) handleForwardedConnection(uconn net.Conn, addr string) {
 }
 
 // NewServer creates a new Server.
-func NewServer(cfg *config.Config, driver IDriver) (*Server, error) {
+func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 	s := &Server{
 		cfg:               cfg,
 		driver:            driver,
@@ -254,50 +247,7 @@ func NewServer(cfg *config.Config, driver IDriver) (*Server, error) {
 }
 
 func (s *Server) loadTLSCertificates() {
-	defer func() {
-		if s.tlsConfig != nil {
-			logutil.BgLogger().Info("secure connection is enabled", zap.Bool("client verification enabled", len(variable.SysVars["ssl_ca"].Value) > 0))
-			variable.SysVars["have_openssl"].Value = "YES"
-			variable.SysVars["have_ssl"].Value = "YES"
-			variable.SysVars["ssl_cert"].Value = s.cfg.Security.SSLCert
-			variable.SysVars["ssl_key"].Value = s.cfg.Security.SSLKey
-		} else {
-			logutil.BgLogger().Warn("secure connection is not enabled")
-		}
-	}()
 
-	if len(s.cfg.Security.SSLCert) == 0 || len(s.cfg.Security.SSLKey) == 0 {
-		s.tlsConfig = nil
-		return
-	}
-
-	tlsCert, err := tls.LoadX509KeyPair(s.cfg.Security.SSLCert, s.cfg.Security.SSLKey)
-	if err != nil {
-		logutil.BgLogger().Warn("load x509 failed", zap.Error(err))
-		s.tlsConfig = nil
-		return
-	}
-
-	// Try loading CA cert.
-	clientAuthPolicy := tls.NoClientCert
-	var certPool *x509.CertPool
-	if len(s.cfg.Security.SSLCA) > 0 {
-		caCert, err := ioutil.ReadFile(s.cfg.Security.SSLCA)
-		if err != nil {
-			logutil.BgLogger().Warn("read file failed", zap.Error(err))
-		} else {
-			certPool = x509.NewCertPool()
-			if certPool.AppendCertsFromPEM(caCert) {
-				clientAuthPolicy = tls.VerifyClientCertIfGiven
-			}
-			variable.SysVars["ssl_ca"].Value = s.cfg.Security.SSLCA
-		}
-	}
-	s.tlsConfig = &tls.Config{
-		Certificates: []tls.Certificate{tlsCert},
-		ClientCAs:    certPool,
-		ClientAuth:   clientAuthPolicy,
-	}
 }
 
 // Run runs the server.
@@ -333,28 +283,6 @@ func (s *Server) Run() error {
 		}
 
 		clientConn := s.newConn(conn)
-
-		err = plugin.ForeachPlugin(plugin.Audit, func(p *plugin.Plugin) error {
-			authPlugin := plugin.DeclareAuditManifest(p.Manifest)
-			if authPlugin.OnConnectionEvent != nil {
-				host, err := clientConn.PeerHost("")
-				if err != nil {
-					logutil.BgLogger().Error("get peer host failed", zap.Error(err))
-					terror.Log(clientConn.Close())
-					return errors.Trace(err)
-				}
-				err = authPlugin.OnConnectionEvent(context.Background(), plugin.PreAuth, &variable.ConnectionInfo{Host: host})
-				if err != nil {
-					logutil.BgLogger().Info("do connection event failed", zap.Error(err))
-					terror.Log(clientConn.Close())
-					return errors.Trace(err)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			continue
-		}
 
 		go s.onConn(clientConn)
 	}
@@ -423,93 +351,16 @@ func (s *Server) onConn(conn *clientConn) {
 	s.rwlock.Unlock()
 	metrics.ConnGauge.Set(float64(connections))
 
-	if plugin.IsEnable(plugin.Audit) {
-		conn.ctx.GetSessionVars().ConnectionInfo = conn.connectInfo()
-	}
-	err := plugin.ForeachPlugin(plugin.Audit, func(p *plugin.Plugin) error {
-		authPlugin := plugin.DeclareAuditManifest(p.Manifest)
-		if authPlugin.OnConnectionEvent != nil {
-			sessionVars := conn.ctx.GetSessionVars()
-			return authPlugin.OnConnectionEvent(context.Background(), plugin.Connected, sessionVars.ConnectionInfo)
-		}
-		return nil
-	})
-	if err != nil {
-		return
-	}
 
-	connectedTime := time.Now()
+
+	//connectedTime := time.Now()
 	conn.Run(ctx)
 
-	err = plugin.ForeachPlugin(plugin.Audit, func(p *plugin.Plugin) error {
-		authPlugin := plugin.DeclareAuditManifest(p.Manifest)
-		if authPlugin.OnConnectionEvent != nil {
-			sessionVars := conn.ctx.GetSessionVars()
-			sessionVars.ConnectionInfo.Duration = float64(time.Since(connectedTime)) / float64(time.Millisecond)
-			err := authPlugin.OnConnectionEvent(context.Background(), plugin.Disconnect, sessionVars.ConnectionInfo)
-			if err != nil {
-				logutil.BgLogger().Warn("do connection event failed", zap.String("plugin", authPlugin.Name), zap.Error(err))
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return
-	}
+
 }
 
-func (cc *clientConn) connectInfo() *variable.ConnectionInfo {
-	connType := "Socket"
-	if cc.server.isUnixSocket() {
-		connType = "UnixSocket"
-	} else if cc.tlsConn != nil {
-		connType = "SSL/TLS"
-	}
-	connInfo := &variable.ConnectionInfo{
-		ConnectionID:      cc.connectionID,
-		ConnectionType:    connType,
-		Host:              cc.peerHost,
-		ClientIP:          cc.peerHost,
-		ClientPort:        cc.peerPort,
-		ServerID:          1,
-		ServerPort:        int(cc.server.cfg.Port),
-		User:              cc.user,
-		ServerOSLoginUser: osUser,
-		OSVersion:         osVersion,
-		ServerVersion:     mysql.TiDBReleaseVersion,
-		SSLVersion:        "v1.2.0", // for current go version
-		PID:               serverPID,
-		DB:                cc.dbname,
-	}
-	return connInfo
-}
 
-// ShowProcessList implements the SessionManager interface.
-func (s *Server) ShowProcessList() map[uint64]*util.ProcessInfo {
-	s.rwlock.RLock()
-	defer s.rwlock.RUnlock()
-	rs := make(map[uint64]*util.ProcessInfo, len(s.clients))
-	for _, client := range s.clients {
-		if atomic.LoadInt32(&client.status) == connStatusWaitShutdown {
-			continue
-		}
-		if pi := client.ctx.ShowProcess(); pi != nil {
-			rs[pi.ID] = pi
-		}
-	}
-	return rs
-}
 
-// GetProcessInfo implements the SessionManager interface.
-func (s *Server) GetProcessInfo(id uint64) (*util.ProcessInfo, bool) {
-	s.rwlock.RLock()
-	conn, ok := s.clients[uint32(id)]
-	s.rwlock.RUnlock()
-	if !ok || atomic.LoadInt32(&conn.status) == connStatusWaitShutdown {
-		return &util.ProcessInfo{}, false
-	}
-	return conn.ctx.ShowProcess(), ok
-}
 
 // Kill implements the SessionManager interface.
 func (s *Server) Kill(connectionID uint64, query bool) {
@@ -532,8 +383,8 @@ func (s *Server) Kill(connectionID uint64, query bool) {
 }
 
 func killConn(conn *clientConn) {
-	sessVars := conn.ctx.GetSessionVars()
-	atomic.CompareAndSwapUint32(&sessVars.Killed, 0, 1)
+	//sessVars := conn.ctx.GetSessionVars()
+	//atomic.CompareAndSwapUint32(&sessVars.Killed, 0, 1)
 }
 
 // KillAllConnections kills all connections when server is not gracefully shutdown.

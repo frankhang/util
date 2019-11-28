@@ -1,4 +1,4 @@
-// Copyright 2017 PingCAP, Inc.
+// Copyright 2019 PingCAP, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,28 +10,24 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// +build !leak
 
-package testleak
+package log
 
 import (
-	"testing"
-
-	"github.com/frankhang/util/check"
+	. "github.com/frankhang/util/check"
 )
 
-// BeforeTest is a dummy implementation when build tag 'leak' is not set.
-func BeforeTest() {
-}
+var _ = Suite(&testLogSuite{})
 
-// AfterTest is a dummy implementation when build tag 'leak' is not set.
-func AfterTest(c *check.C) func() {
-	return func() {
-	}
-}
+type testLogSuite struct{}
 
-// AfterTestT is used after all the test cases is finished.
-func AfterTestT(t *testing.T) func() {
-	return func() {
-	}
+func (t *testLogSuite) TestExport(c *C) {
+	conf := &Config{Level: "debug", File: FileLogConfig{}, DisableTimestamp: true}
+	lg := newZapTestLogger(conf, c)
+	ReplaceGlobals(lg.Logger, nil)
+	Info("Testing")
+	Debug("Testing")
+	Warn("Testing")
+	Error("Testing")
+	lg.AssertContains("log_test.go:")
 }

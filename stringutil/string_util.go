@@ -18,7 +18,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/pingcap/errors"
+	"github.com/frankhang/util/errors"
 	"github.com/frankhang/util/hack"
 )
 

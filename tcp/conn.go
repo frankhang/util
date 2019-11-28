@@ -35,12 +35,9 @@
 package tcp
 
 import (
-
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/pingcap/tidb/executor"
-
 	"io"
 	"net"
 	"runtime"
@@ -53,15 +50,12 @@ import (
 	"github.com/frankhang/util/hack"
 	"github.com/frankhang/util/logutil"
 
-
 	"github.com/frankhang/util/metrics"
-	
+
 	"github.com/opentracing/opentracing-go"
-	"github.com/pingcap/errors"
+	"github.com/frankhang/util/errors"
 	"github.com/pingcap/failpoint"
 
-	"github.com/pingcap/parser/mysql"
-	"github.com/pingcap/parser/terror"
 
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -465,11 +459,11 @@ func (cc *clientConn) dispatch(ctx context.Context, data []byte) error {
 		span.Finish()
 	}()
 
-	vars := cc.ctx.GetSessionVars()
+	//vars := cc.ctx.GetSessionVars()
 	//atomic.StoreUint32(&vars.Killed, 0)
-	if cmd < mysql.ComEnd {
-		cc.ctx.SetCommandValue(cmd)
-	}
+	//if cmd < mysql.ComEnd {
+	//	cc.ctx.SetCommandValue(cmd)
+	//}
 
 	dataStr := string(hack.String(data))
 	switch cmd {
@@ -510,18 +504,13 @@ func (cc *clientConn) dispatch(ctx context.Context, data []byte) error {
 	case mysql.ComChangeUser:
 		return cc.handleChangeUser(ctx, data)
 	default:
-		return mysql.NewErrf(mysql.ErrUnknown, "command %d not supported now", cmd)
+		//return mysql.NewErrf(mysql.ErrUnknown, "command %d not supported now", cmd)
+		return nil
 	}
 }
 
 func (cc *clientConn) useDB(ctx context.Context, db string) (err error) {
-	// if input is "use `SELECT`", mysql client just send "SELECT"
-	// so we add `` around db.
-	_, err = cc.ctx.Execute(ctx, "use `"+db+"`")
-	if err != nil {
-		return err
-	}
-	cc.dbname = db
+
 	return
 }
 
@@ -641,66 +630,7 @@ func (cc *clientConn) writeReq(filePath string) error {
 
 
 
-// handleLoadData does the additional work after processing the 'load data' query.
-// It sends client a file path, then reads the file content from client, inserts data into database.
-func (cc *clientConn) handleLoadData(ctx context.Context, loadDataInfo *executor.LoadDataInfo) error {
-	// If the server handles the load data request, the client has to set the ClientLocalFiles capability.
-	if cc.capability&mysql.ClientLocalFiles == 0 {
-		return errNotAllowedCommand
-	}
-	if loadDataInfo == nil {
-		return errors.New("load data info is empty")
-	}
 
-	err := cc.writeReq(loadDataInfo.Path)
-	if err != nil {
-		return err
-	}
-
-	loadDataInfo.InitQueues()
-	loadDataInfo.SetMaxRowsInBatch(uint64(loadDataInfo.Ctx.GetSessionVars().DMLBatchSize))
-	loadDataInfo.StartStopWatcher()
-	err = loadDataInfo.Ctx.NewTxn(ctx)
-	if err != nil {
-		return err
-	}
-	// processStream process input data, enqueue commit task
-	go processStream(ctx, cc, loadDataInfo)
-	err = loadDataInfo.CommitWork(ctx)
-	loadDataInfo.SetMessage()
-	return err
-}
-
-// handleLoadStats does the additional work after processing the 'load stats' query.
-// It sends client a file path, then reads the file content from client, loads it into the storage.
-func (cc *clientConn) handleLoadStats(ctx context.Context, loadStatsInfo *executor.LoadStatsInfo) error {
-	// If the server handles the load data request, the client has to set the ClientLocalFiles capability.
-	if cc.capability&mysql.ClientLocalFiles == 0 {
-		return errNotAllowedCommand
-	}
-	if loadStatsInfo == nil {
-		return errors.New("load stats: info is empty")
-	}
-	err := cc.writeReq(loadStatsInfo.Path)
-	if err != nil {
-		return err
-	}
-	var prevData, curData []byte
-	for {
-		curData, err = cc.readPacket()
-		if err != nil && terror.ErrorNotEqual(err, io.EOF) {
-			return err
-		}
-		if len(curData) == 0 {
-			break
-		}
-		prevData = append(prevData, curData...)
-	}
-	if len(prevData) == 0 {
-		return nil
-	}
-	return loadStatsInfo.Update(prevData)
-}
 
 
 
@@ -750,24 +680,7 @@ func (cc *clientConn) handleChangeUser(ctx context.Context, data []byte) error {
 		return err
 	}
 
-	if plugin.IsEnable(plugin.Audit) {
-		cc.ctx.GetSessionVars().ConnectionInfo = cc.connectInfo()
-	}
 
-	err = plugin.ForeachPlugin(plugin.Audit, func(p *plugin.Plugin) error {
-		authPlugin := plugin.DeclareAuditManifest(p.Manifest)
-		if authPlugin.OnConnectionEvent != nil {
-			connInfo := cc.ctx.GetSessionVars().ConnectionInfo
-			err = authPlugin.OnConnectionEvent(context.Background(), plugin.ChangeUser, connInfo)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
 
 	return cc.writeOK()
 }

@@ -16,7 +16,7 @@ package stringutil
 import (
 	"testing"
 
-	. "github.com/pingcap/check"
+	. "github.com/frankhang/util/check"
 	"github.com/frankhang/util/testleak"
 )
 
