@@ -33,7 +33,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/pingcap/tidb/sessionctx/variable"
+
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -51,7 +51,6 @@ import (
 	"github.com/frankhang/util/metrics"
 	"github.com/frankhang/util/logutil"
 	"github.com/frankhang/util/db/config"
-	"github.com/frankhang/util/plugin"
 	"github.com/frankhang/util/sys/linux"
 	"github.com/frankhang/util/util"
 
