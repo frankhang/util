@@ -32,8 +32,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-
-
+	"github.com/pingcap/parser/terror"
 	"io"
 	"math/rand"
 	"net"
@@ -47,14 +46,13 @@ import (
 	// For pprof
 	_ "net/http/pprof"
 
+	"github.com/frankhang/util/errors"
 	"github.com/frankhang/util/logutil"
 	"github.com/frankhang/util/metrics"
 	"github.com/frankhang/util/sys/linux"
 	"github.com/frankhang/util/util"
 
 	"github.com/blacktear23/go-proxyprotocol"
-	"github.com/frankhang/util/errors"
-
 
 	"go.uber.org/zap"
 )
@@ -81,26 +79,21 @@ func init() {
 }
 
 var (
+	errInvalidSequence = terror.ClassServer.New(codeInvalidSequence, "invalid sequence")
+
 	//errUnknownFieldType  = terror.ClassServer.New(codeUnknownFieldType, "unknown field type")
-	//errInvalidSequence   = terror.ClassServer.New(codeInvalidSequence, "invalid sequence")
 	//errInvalidType       = terror.ClassServer.New(codeInvalidType, "invalid type")
 	//errNotAllowedCommand = terror.ClassServer.New(codeNotAllowedCommand, "the used command is not allowed with this TiDB version")
 	//errAccessDenied      = terror.ClassServer.New(codeAccessDenied, mysql.MySQLErrName[mysql.ErrAccessDenied])
 )
-
-// DefaultCapability is the capability of the server when it is created using the default configuration.
-// When server is configured with SSL, the server will have extra capabilities compared to DefaultCapability.
-const defaultCapability = mysql.ClientLongPassword | mysql.ClientLongFlag |
-	mysql.ClientConnectWithDB | mysql.ClientProtocol41 |
-	mysql.ClientTransactions | mysql.ClientSecureConnection | mysql.ClientFoundRows |
-	mysql.ClientMultiStatements | mysql.ClientMultiResults | mysql.ClientLocalFiles |
-	mysql.ClientConnectAtts | mysql.ClientPluginAuth | mysql.ClientInteractive
 
 // Server is the MySQL protocol server
 type Server struct {
 	cfg               *Config
 	tlsConfig         *tls.Config
 	driver            IDriver
+	packetReader      PacketReader
+	packetWriter      PacketWriter
 	listener          net.Listener
 	socket            net.Listener
 	rwlock            sync.RWMutex
@@ -139,11 +132,16 @@ func (s *Server) releaseToken(token *Token) {
 // It allocates a connection ID and random salt data for authentication.
 func (s *Server) newConn(conn net.Conn) *clientConn {
 	cc := newClientConn(s)
-	if s.cfg.Performance.TCPKeepAlive {
-		if tcpConn, ok := conn.(*net.TCPConn); ok {
-			if err := tcpConn.SetKeepAlive(true); err != nil {
-				logutil.BgLogger().Error("failed to set tcp keep alive option", zap.Error(err))
-			}
+	//if s.cfg.Performance.TCPKeepAlive {
+	//	if tcpConn, ok := conn.(*net.TCPConn); ok {
+	//		if err := tcpConn.SetKeepAlive(true); err != nil {
+	//			logutil.BgLogger().Error("failed to set tcp keep alive option", zap.Error(err))
+	//		}
+	//	}
+	//}
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		if err := tcpConn.SetKeepAlive(true); err != nil {
+			logutil.BgLogger().Error("failed to set tcp keep alive option", zap.Error(err))
 		}
 	}
 	cc.setConn(conn)
@@ -175,7 +173,7 @@ func (s *Server) forwardUnixSocketToTCP() {
 }
 
 func (s *Server) handleForwardedConnection(uconn net.Conn, addr string) {
-	defer terror.Call(uconn.Close)
+	defer errors.Call(uconn.Close)
 	if tconn, err := net.Dial("tcp", addr); err == nil {
 		go func() {
 			if _, err := io.Copy(uconn, tconn); err != nil {
@@ -193,18 +191,20 @@ func (s *Server) handleForwardedConnection(uconn net.Conn, addr string) {
 // NewServer creates a new Server.
 func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 	s := &Server{
-		cfg:               cfg,
+		cfg: cfg,
 		driver:            driver,
+		packetReader:      driver.GetPacketReader(),
+		packetWriter:      driver.GetPacketWriter(),
 		concurrentLimiter: NewTokenLimiter(cfg.TokenLimit),
 		clients:           make(map[uint32]*clientConn),
 		stopListenerCh:    make(chan struct{}, 1),
 	}
 	s.loadTLSCertificates()
 
-	s.capability = defaultCapability
-	if s.tlsConfig != nil {
-		s.capability |= mysql.ClientSSL
-	}
+	s.capability = 4096
+	//if s.tlsConfig != nil {
+	//	s.capability |= mysql.ClientSSL
+	//}
 
 	var err error
 
@@ -234,7 +234,7 @@ func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 			logutil.BgLogger().Error("ProxyProtocol networks parameter invalid")
 			return nil, errors.Trace(errProxy)
 		}
-		logutil.BgLogger().Info("server is running MySQL protocol (through PROXY protocol)", zap.String("host", s.cfg.Host))
+		logutil.BgLogger().Info("server is running protocol (through PROXY protocol)", zap.String("host", s.cfg.Host))
 		s.listener = pplistener
 	}
 
@@ -255,7 +255,7 @@ func (s *Server) loadTLSCertificates() {
 func (s *Server) Run() error {
 	metrics.ServerEventCounter.WithLabelValues(metrics.EventStart).Inc()
 
-	// Start HTTP API to report tidb info such as TPS.
+	// Start HTTP API to report server info such as TPS.
 	if s.cfg.Status.ReportStatus {
 		s.startStatusHTTP()
 	}
@@ -279,7 +279,7 @@ func (s *Server) Run() error {
 		}
 		if s.shouldStopListener() {
 			err = conn.Close()
-			terror.Log(errors.Trace(err))
+			errors.Log(errors.Trace(err))
 			break
 		}
 
@@ -288,7 +288,7 @@ func (s *Server) Run() error {
 		go s.onConn(clientConn)
 	}
 	err := s.listener.Close()
-	terror.Log(errors.Trace(err))
+	errors.Log(errors.Trace(err))
 	s.listener = nil
 	for {
 		metrics.ServerEventCounter.WithLabelValues(metrics.EventHang).Inc()
@@ -313,17 +313,17 @@ func (s *Server) Close() {
 
 	if s.listener != nil {
 		err := s.listener.Close()
-		terror.Log(errors.Trace(err))
+		errors.Log(errors.Trace(err))
 		s.listener = nil
 	}
 	if s.socket != nil {
 		err := s.socket.Close()
-		terror.Log(errors.Trace(err))
+		errors.Log(errors.Trace(err))
 		s.socket = nil
 	}
 	if s.statusServer != nil {
 		err := s.statusServer.Close()
-		terror.Log(errors.Trace(err))
+		errors.Log(errors.Trace(err))
 		s.statusServer = nil
 	}
 	metrics.ServerEventCounter.WithLabelValues(metrics.EventClose).Inc()
@@ -337,7 +337,7 @@ func (s *Server) onConn(conn *clientConn) {
 		// So we only record metrics.
 		metrics.HandShakeErrorCounter.Inc()
 		err = conn.Close()
-		terror.Log(errors.Trace(err))
+		errors.Log(errors.Trace(err))
 		return
 	}
 
@@ -352,16 +352,10 @@ func (s *Server) onConn(conn *clientConn) {
 	s.rwlock.Unlock()
 	metrics.ConnGauge.Set(float64(connections))
 
-
-
 	//connectedTime := time.Now()
 	conn.Run(ctx)
 
-
 }
-
-
-
 
 // Kill implements the SessionManager interface.
 func (s *Server) Kill(connectionID uint64, query bool) {
@@ -397,7 +391,7 @@ func (s *Server) KillAllConnections() {
 	for _, conn := range s.clients {
 		atomic.StoreInt32(&conn.status, connStatusShutdown)
 		if err := conn.closeWithoutLock(); err != nil {
-			terror.Log(err)
+			errors.Log(err)
 		}
 		killConn(conn)
 	}
@@ -473,17 +467,4 @@ const (
 	codeInvalidPayloadLen = 2
 	codeInvalidSequence   = 3
 	codeInvalidType       = 4
-
-	codeNotAllowedCommand   = 1148
-	codeAccessDenied        = mysql.ErrAccessDenied
-	codeMaxExecTimeExceeded = mysql.ErrMaxExecTimeExceeded
 )
-
-func init() {
-	serverMySQLErrCodes := map[terror.ErrCode]uint16{
-		codeNotAllowedCommand:   mysql.ErrNotAllowedCommand,
-		codeAccessDenied:        mysql.ErrAccessDenied,
-		codeMaxExecTimeExceeded: mysql.ErrMaxExecTimeExceeded,
-	}
-	terror.ErrClassToMySQLCodes[terror.ClassServer] = serverMySQLErrCodes
-}

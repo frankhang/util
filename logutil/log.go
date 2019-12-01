@@ -27,7 +27,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	tlog "github.com/opentracing/opentracing-go/log"
 	"github.com/frankhang/util/errors"
-	zaplog "github.com/pingcap/log"
+	zaplog "github.com/frankhang/util/log"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

@@ -14,10 +14,6 @@
 package metrics
 
 import (
-	"github.com/pingcap/parser/terror"
-	"strconv"
-
-	"github.com/frankhang/util/errors"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -47,7 +43,7 @@ var (
 
 	ConnGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Namespace: "tidb",
+			Namespace: "iot",
 			Subsystem: "server",
 			Name:      "connections",
 			Help:      "Number of connections.",

@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	. "github.com/tiancaiamao/check"
-	zaplog "github.com/pingcap/log"
+	zaplog "github.com/frankhang/util/log"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 )

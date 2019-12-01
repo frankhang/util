@@ -15,10 +15,10 @@ package memory
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/parser/terror"
+	"sync"
+
 	"github.com/frankhang/util/logutil"
 	"go.uber.org/zap"
 )
