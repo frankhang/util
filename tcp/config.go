@@ -47,59 +47,27 @@ var (
 		"mocktikv": true,
 		"tikv":     true,
 	}
-	// checkTableBeforeDrop enable to execute `admin check table` before `drop table`.
-	CheckTableBeforeDrop = false
-	// checkBeforeDropLDFlag is a go build flag.
-	checkBeforeDropLDFlag = "None"
 )
 
 // Config contains configuration options.
 type Config struct {
-	Host             string          `toml:"host" json:"host"`
-	AdvertiseAddress string          `toml:"advertise-address" json:"advertise-address"`
-	Port             uint            `toml:"port" json:"port"`
-	Cors             string          `toml:"cors" json:"cors"`
-	Store            string          `toml:"store" json:"store"`
-	Path             string          `toml:"path" json:"path"`
-	Socket           string          `toml:"socket" json:"socket"`
-	Lease            string          `toml:"lease" json:"lease"`
-	RunDDL           bool            `toml:"run-ddl" json:"run-ddl"`
-	SplitTable       bool            `toml:"split-table" json:"split-table"`
-	TokenLimit       uint            `toml:"token-limit" json:"token-limit"`
-	OOMUseTmpStorage bool            `toml:"oom-use-tmp-storage" json:"oom-use-tmp-storage"`
-	OOMAction        string          `toml:"oom-action" json:"oom-action"`
-	MemQuotaQuery    int64           `toml:"mem-quota-query" json:"mem-quota-query"`
-	EnableStreaming  bool            `toml:"enable-streaming" json:"enable-streaming"`
-	EnableBatchDML   bool            `toml:"enable-batch-dml" json:"enable-batch-dml"`
-	TxnLocalLatches  TxnLocalLatches `toml:"txn-local-latches" json:"txn-local-latches"`
-	// Set sys variable lower-case-table-names, ref: https://dev.mysql.com/doc/refman/5.7/en/identifier-case-sensitivity.html.
-	// TODO: We actually only support mode 2, which keeps the original case, but the comparison is case-insensitive.
-	LowerCaseTableNames int `toml:"lower-case-table-names" json:"lower-case-table-names"`
+	Host             string `toml:"host" json:"host"`
+	AdvertiseAddress string `toml:"advertise-address" json:"advertise-address"`
+	Port             uint   `toml:"port" json:"port"`
+	Path             string `toml:"path" json:"path"`
+	Socket           string `toml:"socket" json:"socket"`
 
-	Log                 Log               `toml:"log" json:"log"`
-	Security            Security          `toml:"security" json:"security"`
-	Status              Status            `toml:"status" json:"status"`
-	Performance         Performance       `toml:"performance" json:"performance"`
-	PreparedPlanCache   PreparedPlanCache `toml:"prepared-plan-cache" json:"prepared-plan-cache"`
-	OpenTracing         OpenTracing       `toml:"opentracing" json:"opentracing"`
-	ProxyProtocol       ProxyProtocol     `toml:"proxy-protocol" json:"proxy-protocol"`
-	TiKVClient          TiKVClient        `toml:"tikv-client" json:"tikv-client"`
-	Binlog              Binlog            `toml:"binlog" json:"binlog"`
-	CompatibleKillQuery bool              `toml:"compatible-kill-query" json:"compatible-kill-query"`
-	Plugin              Plugin            `toml:"plugin" json:"plugin"`
-	PessimisticTxn      PessimisticTxn    `toml:"pessimistic-txn" json:"pessimistic-txn"`
-	CheckMb4ValueInUTF8 bool              `toml:"check-mb4-value-in-utf8" json:"check-mb4-value-in-utf8"`
-	// AlterPrimaryKey is used to control alter primary key feature.
-	AlterPrimaryKey bool `toml:"alter-primary-key" json:"alter-primary-key"`
-	// TreatOldVersionUTF8AsUTF8MB4 is use to treat old version table/column UTF8 charset as UTF8MB4. This is for compatibility.
-	// Currently not support dynamic modify, because this need to reload all old version schema.
-	TreatOldVersionUTF8AsUTF8MB4 bool `toml:"treat-old-version-utf8-as-utf8mb4" json:"treat-old-version-utf8-as-utf8mb4"`
-	// EnableTableLock indicate whether enable table lock.
-	// TODO: remove this after table lock features stable.
-	EnableTableLock     bool        `toml:"enable-table-lock" json:"enable-table-lock"`
-	DelayCleanTableLock uint64      `toml:"delay-clean-table-lock" json:"delay-clean-table-lock"`
-	SplitRegionMaxNum   uint64      `toml:"split-region-max-num" json:"split-region-max-num"`
-	StmtSummary         StmtSummary `toml:"stmt-summary" json:"stmt-summary"`
+	TokenLimit uint `toml:"token-limit" json:"token-limit"`
+
+	Log         Log         `toml:"log" json:"log"`
+	Security    Security    `toml:"security" json:"security"`
+	Status      Status      `toml:"status" json:"status"`
+	Performance Performance `toml:"performance" json:"performance"`
+
+	OpenTracing   OpenTracing   `toml:"opentracing" json:"opentracing"`
+	ProxyProtocol ProxyProtocol `toml:"proxy-protocol" json:"proxy-protocol"`
+
+	ReadTimeout uint `toml:"read-timeout" json:"read-timeout"`
 }
 
 // nullableBool defaults unset bool options to unset instead of false, which enables us to know if the user has set 2
@@ -351,100 +319,16 @@ type ProxyProtocol struct {
 	HeaderTimeout uint `toml:"header-timeout" json:"header-timeout"`
 }
 
-// TiKVClient is the config for tikv client.
-type TiKVClient struct {
-	// GrpcConnectionCount is the max gRPC connections that will be established
-	// with each tikv-server.
-	GrpcConnectionCount uint `toml:"grpc-connection-count" json:"grpc-connection-count"`
-	// After a duration of this time in seconds if the client doesn't see any activity it pings
-	// the server to see if the transport is still alive.
-	GrpcKeepAliveTime uint `toml:"grpc-keepalive-time" json:"grpc-keepalive-time"`
-	// After having pinged for keepalive check, the client waits for a duration of Timeout in seconds
-	// and if no activity is seen even after that the connection is closed.
-	GrpcKeepAliveTimeout uint `toml:"grpc-keepalive-timeout" json:"grpc-keepalive-timeout"`
-	// CommitTimeout is the max time which command 'commit' will wait.
-	CommitTimeout string `toml:"commit-timeout" json:"commit-timeout"`
-
-	// MaxBatchSize is the max batch size when calling batch commands API.
-	MaxBatchSize uint `toml:"max-batch-size" json:"max-batch-size"`
-	// If TiKV load is greater than this, TiDB will wait for a while to avoid little batch.
-	OverloadThreshold uint `toml:"overload-threshold" json:"overload-threshold"`
-	// MaxBatchWaitTime in nanosecond is the max wait time for batch.
-	MaxBatchWaitTime time.Duration `toml:"max-batch-wait-time" json:"max-batch-wait-time"`
-	// BatchWaitSize is the max wait size for batch.
-	BatchWaitSize uint `toml:"batch-wait-size" json:"batch-wait-size"`
-	// EnableChunkRPC indicate the data encode in chunk format for coprocessor requests.
-	EnableChunkRPC bool `toml:"enable-chunk-rpc" json:"enable-chunk-rpc"`
-	// If a Region has not been accessed for more than the given duration (in seconds), it
-	// will be reloaded from the PD.
-	RegionCacheTTL uint `toml:"region-cache-ttl" json:"region-cache-ttl"`
-	// If a store has been up to the limit, it will return error for successive request to
-	// prevent the store occupying too much token in dispatching level.
-	StoreLimit int64 `toml:"store-limit" json:"store-limit"`
-}
-
-// Binlog is the config for binlog.
-type Binlog struct {
-	Enable bool `toml:"enable" json:"enable"`
-	// If IgnoreError is true, when writing binlog meets error, TiDB would
-	// ignore the error.
-	IgnoreError  bool   `toml:"ignore-error" json:"ignore-error"`
-	WriteTimeout string `toml:"write-timeout" json:"write-timeout"`
-	// Use socket file to write binlog, for compatible with kafka version tidb-binlog.
-	BinlogSocket string `toml:"binlog-socket" json:"binlog-socket"`
-	// The strategy for sending binlog to pump, value can be "range" or "hash" now.
-	Strategy string `toml:"strategy" json:"strategy"`
-}
-
-// Plugin is the config for plugin
-type Plugin struct {
-	Dir  string `toml:"dir" json:"dir"`
-	Load string `toml:"load" json:"load"`
-}
-
-// PessimisticTxn is the config for pessimistic transaction.
-type PessimisticTxn struct {
-	// Enable must be true for 'begin lock' or session variable to start a pessimistic transaction.
-	Enable bool `toml:"enable" json:"enable"`
-	// The max count of retry for a single statement in a pessimistic transaction.
-	MaxRetryCount uint `toml:"max-retry-count" json:"max-retry-count"`
-}
-
-// StmtSummary is the config for statement summary.
-type StmtSummary struct {
-	// The maximum number of statements kept in memory.
-	MaxStmtCount uint `toml:"max-stmt-count" json:"max-stmt-count"`
-	// The maximum length of displayed normalized SQL and sample SQL.
-	MaxSQLLength uint `toml:"max-sql-length" json:"max-sql-length"`
-}
-
 var defaultConf = Config{
-	Host:                         "0.0.0.0",
-	AdvertiseAddress:             "",
-	Port:                         4000,
-	Cors:                         "",
-	Store:                        "mocktikv",
-	Path:                         "/tmp/tidb",
-	RunDDL:                       true,
-	SplitTable:                   true,
-	Lease:                        "45s",
-	TokenLimit:                   1000,
-	OOMUseTmpStorage:             true,
-	OOMAction:                    "log",
-	MemQuotaQuery:                32 << 30,
-	EnableStreaming:              false,
-	EnableBatchDML:               false,
-	CheckMb4ValueInUTF8:          true,
-	AlterPrimaryKey:              false,
-	TreatOldVersionUTF8AsUTF8MB4: true,
-	EnableTableLock:              false,
-	DelayCleanTableLock:          0,
-	SplitRegionMaxNum:            1000,
-	TxnLocalLatches: TxnLocalLatches{
-		Enabled:  false,
-		Capacity: 2048000,
-	},
-	LowerCaseTableNames: 2,
+	Host:             "0.0.0.0",
+	AdvertiseAddress: "",
+	Port:             4000,
+
+	Path: "/tmp/tidb",
+
+	TokenLimit: 1000,
+
+
 	Log: Log{
 		Level:               "info",
 		Format:              "text",
@@ -484,11 +368,7 @@ var defaultConf = Config{
 		Networks:      "",
 		HeaderTimeout: 5,
 	},
-	PreparedPlanCache: PreparedPlanCache{
-		Enabled:          false,
-		Capacity:         100,
-		MemoryGuardRatio: 0.1,
-	},
+
 	OpenTracing: OpenTracing{
 		Enable: false,
 		Sampler: OpenTracingSampler{
@@ -496,34 +376,6 @@ var defaultConf = Config{
 			Param: 1.0,
 		},
 		Reporter: OpenTracingReporter{},
-	},
-	TiKVClient: TiKVClient{
-		GrpcConnectionCount:  4,
-		GrpcKeepAliveTime:    10,
-		GrpcKeepAliveTimeout: 3,
-		CommitTimeout:        "41s",
-
-		MaxBatchSize:      128,
-		OverloadThreshold: 200,
-		MaxBatchWaitTime:  0,
-		BatchWaitSize:     8,
-
-		EnableChunkRPC: true,
-
-		RegionCacheTTL: 600,
-		StoreLimit:     0,
-	},
-	Binlog: Binlog{
-		WriteTimeout: "15s",
-		Strategy:     "range",
-	},
-	PessimisticTxn: PessimisticTxn{
-		Enable:        true,
-		MaxRetryCount: 256,
-	},
-	StmtSummary: StmtSummary{
-		MaxStmtCount: 100,
-		MaxSQLLength: 4096,
 	},
 }
 
@@ -654,67 +506,11 @@ func (c *Config) Load(confFile string) error {
 
 // Valid checks if this config is valid.
 func (c *Config) Valid() error {
-	if c.Log.EnableErrorStack == c.Log.DisableErrorStack && c.Log.EnableErrorStack != nbUnset {
-		logutil.BgLogger().Warn(fmt.Sprintf("\"enable-error-stack\" (%v) conflicts \"disable-error-stack\" (%v). \"disable-error-stack\" is deprecated, please use \"enable-error-stack\" instead. disable-error-stack is ignored.", c.Log.EnableErrorStack, c.Log.DisableErrorStack))
-		// if two options conflict, we will use the value of EnableErrorStack
-		c.Log.DisableErrorStack = nbUnset
-	}
-	if c.Log.EnableTimestamp == c.Log.DisableTimestamp && c.Log.EnableTimestamp != nbUnset {
-		logutil.BgLogger().Warn(fmt.Sprintf("\"enable-timestamp\" (%v) conflicts \"disable-timestamp\" (%v). \"disable-timestamp\" is deprecated, please use \"enable-timestamp\" instead", c.Log.EnableTimestamp, c.Log.DisableTimestamp))
-		// if two options conflict, we will use the value of EnableTimestamp
-		c.Log.DisableTimestamp = nbUnset
-	}
-	if c.Security.SkipGrantTable && !hasRootPrivilege() {
-		return fmt.Errorf("TiDB run with skip-grant-table need root privilege")
-	}
-	if _, ok := ValidStorage[c.Store]; !ok {
-		nameList := make([]string, 0, len(ValidStorage))
-		for k, v := range ValidStorage {
-			if v {
-				nameList = append(nameList, k)
-			}
-		}
-		return fmt.Errorf("invalid store=%s, valid storages=%v", c.Store, nameList)
-	}
-	if c.Store == "mocktikv" && !c.RunDDL {
-		return fmt.Errorf("can't disable DDL on mocktikv")
-	}
-	if c.Log.File.MaxSize > MaxLogFileSize {
-		return fmt.Errorf("invalid max log file size=%v which is larger than max=%v", c.Log.File.MaxSize, MaxLogFileSize)
-	}
-	c.OOMAction = strings.ToLower(c.OOMAction)
-	if c.OOMAction != OOMActionLog && c.OOMAction != OOMActionCancel {
-		return fmt.Errorf("unsupported OOMAction %v, TiDB only supports [%v, %v]", c.OOMAction, OOMActionLog, OOMActionCancel)
-	}
-
-	// lower_case_table_names is allowed to be 0, 1, 2
-	if c.LowerCaseTableNames < 0 || c.LowerCaseTableNames > 2 {
-		return fmt.Errorf("lower-case-table-names should be 0 or 1 or 2")
-	}
-
-	if c.TxnLocalLatches.Enabled && c.TxnLocalLatches.Capacity == 0 {
-		return fmt.Errorf("txn-local-latches.capacity can not be 0")
-	}
-
-	// For tikvclient.
-	if c.TiKVClient.GrpcConnectionCount == 0 {
-		return fmt.Errorf("grpc-connection-count should be greater than 0")
-	}
 	return nil
 }
 
 func hasRootPrivilege() bool {
 	return os.Geteuid() == 0
-}
-
-// TableLockEnabled uses to check whether enabled the table lock feature.
-func TableLockEnabled() bool {
-	return GetGlobalConfig().EnableTableLock
-}
-
-// TableLockDelayClean uses to get the time of delay clean table lock.
-var TableLockDelayClean = func() uint64 {
-	return GetGlobalConfig().DelayCleanTableLock
 }
 
 // ToLogConfig converts *Log to *logutil.LogConfig.
@@ -745,9 +541,7 @@ func (t *OpenTracing) ToTracingConfig() *tracing.Configuration {
 
 func init() {
 	globalConf.Store(&defaultConf)
-	if checkBeforeDropLDFlag == "1" {
-		CheckTableBeforeDrop = true
-	}
+
 }
 
 // The following constants represents the valid action configurations for OOMAction.

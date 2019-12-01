@@ -65,11 +65,12 @@ type Server struct {
 	driver            IDriver
 	packetReader      PacketReader
 	packetWriter      PacketWriter
+	handler           Handler
 	listener          net.Listener
 	socket            net.Listener
 	rwlock            sync.RWMutex
 	concurrentLimiter *TokenLimiter
-	clients           map[uint32]*clientConn
+	clients           map[uint32]*ClientConn
 	capability        uint32
 
 	// stopListenerCh is used when a critical error occurred, we don't want to exit the process, because there may be
@@ -99,9 +100,9 @@ func (s *Server) releaseToken(token *Token) {
 	s.concurrentLimiter.Put(token)
 }
 
-// newConn creates a new *clientConn from a net.Conn.
+// newConn creates a new *ClientConn from a net.Conn.
 // It allocates a connection ID and random salt data for authentication.
-func (s *Server) newConn(conn net.Conn) *clientConn {
+func (s *Server) newConn(conn net.Conn) *ClientConn {
 	cc := newClientConn(s)
 	//if s.cfg.Performance.TCPKeepAlive {
 	//	if tcpConn, ok := conn.(*net.TCPConn); ok {
@@ -162,12 +163,14 @@ func (s *Server) handleForwardedConnection(uconn net.Conn, addr string) {
 // NewServer creates a new Server.
 func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 	s := &Server{
-		cfg: cfg,
-		driver:            driver,
-		packetReader:      driver.GetPacketReader(),
-		packetWriter:      driver.GetPacketWriter(),
+		cfg:          cfg,
+		driver:       driver,
+		packetReader: driver.GetPacketReader(),
+		packetWriter: driver.GetPacketWriter(),
+		handler:      driver.GetHandler(),
+
 		concurrentLimiter: NewTokenLimiter(cfg.TokenLimit),
-		clients:           make(map[uint32]*clientConn),
+		clients:           make(map[uint32]*ClientConn),
 		stopListenerCh:    make(chan struct{}, 1),
 	}
 	s.loadTLSCertificates()
@@ -301,7 +304,7 @@ func (s *Server) Close() {
 }
 
 // onConn runs in its own goroutine, handles queries from this connection.
-func (s *Server) onConn(conn *clientConn) {
+func (s *Server) onConn(conn *ClientConn) {
 	ctx := logutil.WithConnID(context.Background(), conn.connectionID)
 	if err := conn.handshake(ctx); err != nil {
 		// Some keep alive services will send request to TiDB and disconnect immediately.
@@ -348,7 +351,7 @@ func (s *Server) Kill(connectionID uint64, query bool) {
 	killConn(conn)
 }
 
-func killConn(conn *clientConn) {
+func killConn(conn *ClientConn) {
 	//sessVars := conn.ctx.GetSessionVars()
 	//atomic.CompareAndSwapUint32(&sessVars.Killed, 0, 1)
 }
@@ -414,7 +417,7 @@ func (s *Server) GracefulDown(ctx context.Context, done chan struct{}) {
 }
 
 func (s *Server) kickIdleConnection() {
-	var conns []*clientConn
+	var conns []*ClientConn
 	s.rwlock.RLock()
 	for _, cc := range s.clients {
 		if cc.ShutdownOrNotify() {

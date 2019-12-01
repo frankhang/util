@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 )
@@ -11,6 +12,8 @@ type IDriver interface {
 	OpenCtx(connID uint64, capability uint32, collation uint8, dbname string, tlsState *tls.ConnectionState) (QueryCtx, error)
 	GetPacketReader() PacketReader
 	GetPacketWriter() PacketWriter
+	SetPacketIO(packetIO *PacketIO)
+	GetHandler() Handler
 }
 
 // QueryCtx is the interface to execute command.
@@ -26,16 +29,9 @@ type QueryCtx interface {
 
 	// Close closes the QueryCtx.
 	Close() error
-
 }
 
-
-
-
-
-// fetchNotifier represents notifier will be called in COM_FETCH.
-type fetchNotifier interface {
-	// OnFetchReturned be called when COM_FETCH returns.
-	// it will be used in server-side cursor.
-	OnFetchReturned()
+//Handler is the inteterface to handle the packet
+type Handler interface {
+	Handle(ctx context.Context, cc *ClientConn, data []byte) error
 }
