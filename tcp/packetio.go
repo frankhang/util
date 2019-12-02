@@ -24,23 +24,21 @@ type PacketWriter interface{
 type PacketIO struct {
 	PacketReader
 	PacketWriter
+	*ClientConn
+	*bufio.Writer
 
-	BufReadConn *bufferedReadConn
-	BufWriter   *bufio.Writer
+
 	sequence    uint8
 	readTimeout time.Duration
 }
 
-func NewPacketIO(bufReadConn *bufferedReadConn) *PacketIO {
-	p := &PacketIO{}
-	p.setBufferedReadConn(bufReadConn)
+func NewPacketIO(cc *ClientConn) *PacketIO {
+	p := &PacketIO{ClientConn: cc}
+	p.Writer = bufio.NewWriterSize(p.BufReadConn, defaultWriterSize)
+
 	return p
 }
 
-func (p *PacketIO) setBufferedReadConn(bufReadConn *bufferedReadConn) {
-	p.BufReadConn = bufReadConn
-	p.BufWriter = bufio.NewWriterSize(bufReadConn, defaultWriterSize)
-}
 
 func (p *PacketIO) setReadTimeout(timeout time.Duration) {
 	p.readTimeout = timeout
@@ -48,7 +46,7 @@ func (p *PacketIO) setReadTimeout(timeout time.Duration) {
 
 
 func (p *PacketIO) flush() error {
-	err := p.BufWriter.Flush()
+	err := p.Writer.Flush()
 	if err != nil {
 		return errors.Trace(err)
 	}

@@ -17,7 +17,7 @@ import (
 	"github.com/frankhang/util/metrics"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/pingcap/failpoint"
+	//"github.com/pingcap/failpoint"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +33,7 @@ func newClientConn(s *Server) *ClientConn {
 	return &ClientConn{
 		server:       s,
 		connectionID: atomic.AddUint32(&baseConnID, 1),
-		alloc:        arena.NewAllocator(32 * 1024),
+		Alloc:        arena.NewAllocator(32 * 1024),
 		status:       connStatusDispatching,
 	}
 }
@@ -50,7 +50,7 @@ type ClientConn struct {
 	capability   uint32            // client capability affects the way server handles client request.
 	connectionID uint32            // atomically allocated by a global variable, unique in process scope.
 	salt         []byte            // random bytes used for authentication.
-	alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
+	Alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
 	lastPacket   []byte            // latest sql query string, currently used for logging error.
 	ctx          QueryCtx          // an interface to execute sql statements.
 	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
@@ -100,18 +100,16 @@ func (cc *ClientConn) closeWithoutLock() error {
 	return closeConn(cc, len(cc.server.clients))
 }
 
-func (cc *ClientConn) readPacket() ([]byte, error) {
-	return cc.pkt.ReadPacket()
-}
 
-func (cc *ClientConn) WritePacket(data []byte) error {
-	failpoint.Inject("FakeClientConn", func() {
-		if cc.pkt == nil {
-			failpoint.Return(nil)
-		}
-	})
-	return cc.pkt.WritePacket(data)
-}
+
+//func (cc *ClientConn) WritePacket(data []byte) error {
+//	failpoint.Inject("FakeClientConn", func() {
+//		if cc.pkt == nil {
+//			failpoint.Return(nil)
+//		}
+//	})
+//	return cc.pkt.WritePacket(data)
+//}
 
 func parseAttrs(data []byte) (map[string]string, error) {
 	attrs := make(map[string]string)
@@ -179,13 +177,13 @@ func (cc *ClientConn) Run(ctx context.Context) {
 			return
 		}
 
-		cc.alloc.Reset()
+		cc.Alloc.Reset()
 		// close connection when idle time is more than wait_timeout
 		//waitTimeout := cc.getSessionVarsWaitTimeout(ctx)
 		waitTimeout := cc.server.cfg.ReadTimeout
 		cc.pkt.setReadTimeout(time.Duration(waitTimeout) * time.Second)
 		start := time.Now()
-		data, err := cc.readPacket()
+		data, err := cc.pkt.ReadPacket()
 		if err != nil {
 			if errors.ErrorNotEqual(err, io.EOF) {
 				if netErr, isNetErr := errors.Cause(err).(net.Error); isNetErr && netErr.Timeout() {
@@ -283,17 +281,17 @@ func (cc *ClientConn) dispatch(ctx context.Context, data []byte) error {
 	if err := cc.Handle(ctx, cc, data); err != nil {
 		return err
 	}
-	return cc.flush()
-}
-
-func (cc *ClientConn) flush() error {
-	failpoint.Inject("FakeClientConn", func() {
-		if cc.pkt == nil {
-			failpoint.Return(nil)
-		}
-	})
 	return cc.pkt.flush()
 }
+
+//func (cc *ClientConn) flush() error {
+//	failpoint.Inject("FakeClientConn", func() {
+//		if cc.pkt == nil {
+//			failpoint.Return(nil)
+//		}
+//	})
+//	return cc.pkt.flush()
+//}
 
 func (cc *ClientConn) setConn(conn net.Conn) {
 	svr := cc.server
@@ -303,10 +301,11 @@ func (cc *ClientConn) setConn(conn net.Conn) {
 		cc.pkt = svr.driver.GeneratePacketIO(cc)
 
 
-	} else {
-		// Preserve current sequence number.
-		cc.pkt.setBufferedReadConn(cc.BufReadConn)
 	}
+	//else {
+	//	// Preserve current sequence number.
+	//	cc.pkt.setBufferedReadConn(cc.BufReadConn)
+	//}
 }
 
 func (cc *ClientConn) upgradeToTLS(tlsConfig *tls.Config) error {
