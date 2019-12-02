@@ -10,10 +10,8 @@ import (
 type IDriver interface {
 	// OpenCtx opens an IContext with connection id, client capability, collation, dbname and optionally the tls state.
 	OpenCtx(connID uint64, capability uint32, collation uint8, dbname string, tlsState *tls.ConnectionState) (QueryCtx, error)
-	GetPacketReader() PacketReader
-	GetPacketWriter() PacketWriter
-	SetPacketIO(packetIO *PacketIO)
-	GetHandler() Handler
+
+	GeneratePacketIO(cc *ClientConn) *PacketIO
 }
 
 // QueryCtx is the interface to execute command.

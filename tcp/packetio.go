@@ -13,7 +13,7 @@ const (
 )
 
 type PacketReader interface{
-	ReadOnePacket() ([]byte, error)
+	ReadPacket() ([]byte, error)
 }
 
 type PacketWriter interface{
@@ -31,11 +31,9 @@ type PacketIO struct {
 	readTimeout time.Duration
 }
 
-func newPacketIO(bufReadConn *bufferedReadConn, packetReader PacketReader, packetWriter PacketWriter) *PacketIO {
-	p := &PacketIO{sequence: 0}
+func NewPacketIO(bufReadConn *bufferedReadConn) *PacketIO {
+	p := &PacketIO{}
 	p.setBufferedReadConn(bufReadConn)
-	p.PacketReader = packetReader
-	p.PacketWriter = packetWriter
 	return p
 }
 
@@ -47,43 +45,6 @@ func (p *PacketIO) setBufferedReadConn(bufReadConn *bufferedReadConn) {
 func (p *PacketIO) setReadTimeout(timeout time.Duration) {
 	p.readTimeout = timeout
 }
-
-
-func (p *PacketIO) ReadPacket() ([]byte, error) {
-	data, err := p.ReadOnePacket()
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	//if len(data) < mysql.MaxPayloadLen {
-	//	return data, nil
-	//}
-
-	if len(data) < maxPacketSize {
-		return data, nil
-	}
-
-	// handle multi-packet
-	for {
-		buf, err := p.ReadOnePacket()
-		if err != nil {
-			return nil, errors.Trace(err)
-		}
-
-		data = append(data, buf...)
-
-		//if len(buf) < mysql.MaxPayloadLen {
-		//	break
-		//}
-
-		if len(buf) < maxPacketSize {
-			break
-		}
-	}
-
-	return data, nil
-}
-
 
 
 func (p *PacketIO) flush() error {

@@ -63,9 +63,6 @@ type Server struct {
 	cfg               *Config
 	tlsConfig         *tls.Config
 	driver            IDriver
-	packetReader      PacketReader
-	packetWriter      PacketWriter
-	handler           Handler
 	listener          net.Listener
 	socket            net.Listener
 	rwlock            sync.RWMutex
@@ -165,10 +162,6 @@ func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 	s := &Server{
 		cfg:          cfg,
 		driver:       driver,
-		packetReader: driver.GetPacketReader(),
-		packetWriter: driver.GetPacketWriter(),
-		handler:      driver.GetHandler(),
-
 		concurrentLimiter: NewTokenLimiter(cfg.TokenLimit),
 		clients:           make(map[uint32]*ClientConn),
 		stopListenerCh:    make(chan struct{}, 1),
@@ -315,7 +308,7 @@ func (s *Server) onConn(conn *ClientConn) {
 		return
 	}
 
-	logutil.Logger(ctx).Info("new connection", zap.String("remoteAddr", conn.bufReadConn.RemoteAddr().String()))
+	logutil.Logger(ctx).Info("new connection", zap.String("remoteAddr", conn.BufReadConn.RemoteAddr().String()))
 
 	defer func() {
 		logutil.Logger(ctx).Info("connection closed")
