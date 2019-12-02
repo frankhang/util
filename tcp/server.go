@@ -298,7 +298,7 @@ func (s *Server) Close() {
 
 // onConn runs in its own goroutine, handles queries from this connection.
 func (s *Server) onConn(conn *ClientConn) {
-	ctx := logutil.WithConnID(context.Background(), conn.connectionID)
+	ctx := logutil.WithConnID(context.Background(), conn.ConnectionID)
 	if err := conn.handshake(ctx); err != nil {
 		// Some keep alive services will send request to TiDB and disconnect immediately.
 		// So we only record metrics.
@@ -314,7 +314,7 @@ func (s *Server) onConn(conn *ClientConn) {
 		logutil.Logger(ctx).Info("connection closed")
 	}()
 	s.rwlock.Lock()
-	s.clients[conn.connectionID] = conn
+	s.clients[conn.ConnectionID] = conn
 	connections := len(s.clients)
 	s.rwlock.Unlock()
 	metrics.ConnGauge.Set(float64(connections))

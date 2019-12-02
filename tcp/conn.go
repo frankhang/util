@@ -32,7 +32,7 @@ const (
 func newClientConn(s *Server) *ClientConn {
 	return &ClientConn{
 		server:       s,
-		connectionID: atomic.AddUint32(&baseConnID, 1),
+		ConnectionID: atomic.AddUint32(&baseConnID, 1),
 		Alloc:        arena.NewAllocator(32 * 1024),
 		status:       connStatusDispatching,
 	}
@@ -48,7 +48,7 @@ type ClientConn struct {
 	tlsConn      *tls.Conn         // TLS connection, nil if not TLS.
 	server       *Server           // a reference of server instance.
 	capability   uint32            // client capability affects the way server handles client request.
-	connectionID uint32            // atomically allocated by a global variable, unique in process scope.
+	ConnectionID uint32            // atomically allocated by a global variable, unique in process scope.
 	salt         []byte            // random bytes used for authentication.
 	Alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
 	lastPacket   []byte            // latest sql query string, currently used for logging error.
@@ -62,7 +62,7 @@ type ClientConn struct {
 
 func (cc *ClientConn) String() string {
 	return fmt.Sprintf("id:%d, addr:%s status:%b",
-		cc.connectionID, cc.BufReadConn.RemoteAddr(), cc.ctx.Status(),
+		cc.ConnectionID, cc.BufReadConn.RemoteAddr(), cc.ctx.Status(),
 	)
 }
 
@@ -79,7 +79,7 @@ func (cc *ClientConn) handshake(ctx context.Context) error {
 
 func (cc *ClientConn) Close() error {
 	cc.server.rwlock.Lock()
-	delete(cc.server.clients, cc.connectionID)
+	delete(cc.server.clients, cc.ConnectionID)
 	connections := len(cc.server.clients)
 	cc.server.rwlock.Unlock()
 	return closeConn(cc, connections)
@@ -96,7 +96,7 @@ func closeConn(cc *ClientConn, connections int) error {
 }
 
 func (cc *ClientConn) closeWithoutLock() error {
-	delete(cc.server.clients, cc.connectionID)
+	delete(cc.server.clients, cc.ConnectionID)
 	return closeConn(cc, len(cc.server.clients))
 }
 

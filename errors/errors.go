@@ -331,6 +331,7 @@ func Find(origErr error, test func(error) bool) error {
 ////
 // ErrClass represents a class of errors.
 type ErrClass int
+
 // ErrCode represents a specific error type in a error class.
 // Same error code can be used in different error classes.
 type ErrCode int
@@ -496,10 +497,6 @@ func (e *Error) NotEqual(err error) bool {
 	return !e.Equal(err)
 }
 
-
-
-
-
 // ErrorEqual returns a boolean indicating whether err1 is equal to err2.
 func ErrorEqual(err1, err2 error) bool {
 	e1 := Cause(err1)
@@ -552,7 +549,6 @@ func Log(err error) {
 	}
 }
 
-
 const (
 	ClassAutoid ErrClass = iota - 1000
 	ClassDDL
@@ -584,24 +580,17 @@ const (
 	// Add more as needed.
 )
 
-
 const (
-
 	CodeUnknown ErrCode = iota - 1000
 	CodeCritical
-
-
-
+	CodeBadConn
 )
 
 // Global error instances.
 var (
-
-	ErrCritical           = ClassGlobal.New(CodeCritical, "critical error %v")
-
+	ErrCritical = ClassGlobal.New(CodeCritical, "critical error %v")
+	ErrBadConn  = ClassGlobal.New(CodeBadConn, "connection was bad %d")
 )
-
-
 
 var ErrClz2Str = map[ErrClass]string{
 	ClassAutoid:     "autoid",
