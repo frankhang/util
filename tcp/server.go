@@ -178,7 +178,7 @@ func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 	if s.cfg.Host != "" && s.cfg.Port != 0 {
 		addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
 		if s.listener, err = net.Listen("tcp", addr); err == nil {
-			logutil.BgLogger().Info("server is running MySQL protocol", zap.String("addr", addr))
+			logutil.BgLogger().Info("server is running...", zap.String("addr", addr))
 			if cfg.Socket != "" {
 				if s.socket, err = net.Listen("unix", s.cfg.Socket); err == nil {
 					logutil.BgLogger().Info("server redirecting", zap.String("from", s.cfg.Socket), zap.String("to", addr))
@@ -188,7 +188,7 @@ func NewServer(cfg *Config, driver IDriver) (*Server, error) {
 		}
 	} else if cfg.Socket != "" {
 		if s.listener, err = net.Listen("unix", cfg.Socket); err == nil {
-			logutil.BgLogger().Info("server is running MySQL protocol", zap.String("socket", cfg.Socket))
+			logutil.BgLogger().Info("server is running on unix socket...", zap.String("socket", cfg.Socket))
 		}
 	} else {
 		err = errors.New("Server not configured to listen on either -socket or -host and -port")

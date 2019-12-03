@@ -322,7 +322,7 @@ type ProxyProtocol struct {
 var defaultConf = Config{
 	Host:             "0.0.0.0",
 	AdvertiseAddress: "",
-	Port:             4000,
+	Port:             10001,
 
 	Path: "/tmp/tidb",
 
