@@ -328,6 +328,8 @@ var defaultConf = Config{
 
 	TokenLimit: 1000,
 
+	ReadTimeout: 3,
+
 
 	Log: Log{
 		Level:               "info",

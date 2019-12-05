@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -66,7 +67,7 @@ func (cc *ClientConn) String() string {
 	)
 }
 
-func (cc *ClientConn) getLastPacket() string {
+func (cc *ClientConn) GetLastPacket() string {
 	return fmt.Sprintf("%x", cc.lastPacket)
 }
 
@@ -156,9 +157,9 @@ func (cc *ClientConn) Run(ctx context.Context) {
 			stackSize := runtime.Stack(buf, false)
 			buf = buf[:stackSize]
 			logutil.Logger(ctx).Error("connection running loop panic",
-				zap.String("lastPacket", cc.getLastPacket()),
+				zap.String("lastPacket", cc.GetLastPacket()),
 				zap.String("err", fmt.Sprintf("%v", r)),
-				zap.String("stack", string(buf)),
+				//zap.String("stack", string(buf)),
 			)
 			metrics.PanicCounter.WithLabelValues(metrics.LabelSession).Inc()
 		}
@@ -180,8 +181,7 @@ func (cc *ClientConn) Run(ctx context.Context) {
 		cc.Alloc.Reset()
 		// close connection when idle time is more than wait_timeout
 		//waitTimeout := cc.getSessionVarsWaitTimeout(ctx)
-		waitTimeout := cc.server.cfg.ReadTimeout
-		cc.pkt.setReadTimeout(time.Duration(waitTimeout) * time.Second)
+
 		start := time.Now()
 		data, err := cc.pkt.ReadPacket()
 		if err != nil {
@@ -190,7 +190,7 @@ func (cc *ClientConn) Run(ctx context.Context) {
 					idleTime := time.Since(start)
 					logutil.Logger(ctx).Info("read packet timeout, close this connection",
 						zap.Duration("idle", idleTime),
-						zap.Uint64("waitTimeout", uint64(waitTimeout)),
+						zap.Uint64("waitTimeout", uint64(cc.server.cfg.ReadTimeout)),
 						zap.Error(err),
 					)
 				} else {
@@ -226,7 +226,7 @@ func (cc *ClientConn) Run(ctx context.Context) {
 				zap.String("connInfo", cc.String()),
 				//zap.String("command", mysql.Command2Str[data[0]]),
 				//zap.String("status", cc.SessionStatusToString()),
-				zap.String("lastPacket", cc.getLastPacket()),
+				zap.String("lastPacket", cc.GetLastPacket()),
 				zap.String("err", errors.ErrorStack(err)),
 			)
 			//err1 := cc.writeError(err)
@@ -272,6 +272,8 @@ func (cc *ClientConn) dispatch(ctx context.Context, data []byte) error {
 	span := opentracing.StartSpan("server.dispatch")
 
 	cc.lastPacket = data
+	ctx = logutil.WithKeyValue(ctx, "length", strconv.Itoa(len(cc.lastPacket)))
+	ctx = logutil.WithKeyValue(ctx, "packet", fmt.Sprintf("%x", cc.lastPacket))
 	token := cc.server.getToken()
 	defer func() {
 		cc.server.releaseToken(token)

@@ -12,11 +12,10 @@ require (
 	github.com/juju/errors v0.0.0-20190930114154-d42613fe1ab9 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pingcap/errors v0.11.4
-	github.com/pingcap/failpoint v0.0.0-20191029060244-12f4ac2fd11d
 	github.com/pingcap/fn v0.0.0-20191016082858-07623b84a47d
-	github.com/pingcap/parser v0.0.0-20191127110312-37cd7d635816
+	github.com/pingcap/parser v0.0.0-20191203075000-55f02bc42e92
 	github.com/pingcap/tidb v2.0.11+incompatible
-	github.com/pingcap/tipb v0.0.0-20191127084114-0820b784842f // indirect
+	github.com/pingcap/tipb v0.0.0-20191203131953-a35f738b4796 // indirect
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tiancaiamao/appdash v0.0.0-20181126055449-889f96f722a2

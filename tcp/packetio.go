@@ -2,14 +2,13 @@ package tcp
 
 import (
 	"bufio"
-	"time"
-
 	"github.com/frankhang/util/errors"
+	"time"
 )
 
 const (
 	defaultWriterSize = 16 * 1024
-	maxPacketSize     = 1024
+
 )
 
 type PacketReader interface{
@@ -27,9 +26,8 @@ type PacketIO struct {
 	*ClientConn
 	*bufio.Writer
 
-
 	sequence    uint8
-	readTimeout time.Duration
+
 }
 
 func NewPacketIO(cc *ClientConn) *PacketIO {
@@ -40,15 +38,23 @@ func NewPacketIO(cc *ClientConn) *PacketIO {
 }
 
 
-func (p *PacketIO) setReadTimeout(timeout time.Duration) {
-	p.readTimeout = timeout
-}
-
-
 func (p *PacketIO) flush() error {
 	err := p.Writer.Flush()
 	if err != nil {
 		return errors.Trace(err)
 	}
 	return err
+}
+
+func (p *PacketIO) SetReadTimeout() {
+
+
+	//panic(errors.New("Test Panic"))
+	waitTimeout := time.Duration(p.server.cfg.ReadTimeout)*time.Second
+	if waitTimeout > 0 {
+		if err := p.BufReadConn.SetReadDeadline(time.Now().Add(waitTimeout)); err != nil {
+			panic(err)
+		}
+	}
+
 }
