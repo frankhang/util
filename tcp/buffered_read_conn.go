@@ -26,7 +26,7 @@ type bufferedReadConn struct {
 // bufferedReadConn is a net.Conn compatible structure that reads from bufio.Reader.
 
 
-func (conn *bufferedReadConn) Read(b []byte) (n int, err error) {
+func (conn bufferedReadConn) Read(b []byte) (n int, err error) {
 	return conn.rb.Read(b)
 }
 
