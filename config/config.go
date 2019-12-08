@@ -423,7 +423,7 @@ type StmtSummary struct {
 var defaultConf = Config{
 	Host:                         "0.0.0.0",
 	AdvertiseAddress:             "",
-	Port:                         4000,
+	Port:                         10001,
 	Cors:                         "",
 	Store:                        "mocktikv",
 	Path:                         "/tmp/tidb",
