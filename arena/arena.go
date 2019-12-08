@@ -59,6 +59,9 @@ func NewAllocator(capacity int) *SimpleAllocator {
 
 // Alloc implements Allocator.AllocBytes interface.
 func (s *SimpleAllocator) Alloc(capacity int) []byte {
+	if capacity <= 0 {
+		panic("Alloc capacity is zero or negative")
+	}
 	if s.off+capacity < cap(s.arena) {
 		slice := s.arena[s.off : s.off : s.off+capacity]
 		s.off += capacity
@@ -70,6 +73,9 @@ func (s *SimpleAllocator) Alloc(capacity int) []byte {
 
 // AllocWithLen implements Allocator.AllocWithLen interface.
 func (s *SimpleAllocator) AllocWithLen(length int, capacity int) []byte {
+	if length < 0 {
+		panic("Alloc length is negative")
+	}
 	slice := s.Alloc(capacity)
 	return slice[:length:capacity]
 }

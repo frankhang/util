@@ -13,6 +13,7 @@ require (
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pingcap/errors v0.11.4
 	github.com/pingcap/fn v0.0.0-20191016082858-07623b84a47d
+	github.com/pingcap/log v0.0.0-20191012051959-b742a5d432e9
 	github.com/pingcap/parser v0.0.0-20191203075000-55f02bc42e92
 	github.com/pingcap/tidb v2.0.11+incompatible
 	github.com/pingcap/tipb v0.0.0-20191203131953-a35f738b4796 // indirect
