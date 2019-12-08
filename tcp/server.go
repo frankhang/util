@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/frankhang/util/config"
 	"io"
 	"math/rand"
 	"net"
@@ -60,7 +61,7 @@ var (
 
 // Server is the MySQL protocol server
 type Server struct {
-	cfg               *Config
+	cfg               *config.Config
 	tlsConfig         *tls.Config
 	driver            IDriver
 	listener          net.Listener
@@ -158,7 +159,7 @@ func (s *Server) handleForwardedConnection(uconn net.Conn, addr string) {
 }
 
 // NewServer creates a new Server.
-func NewServer(cfg *Config, driver IDriver) (*Server, error) {
+func NewServer(cfg *config.Config, driver IDriver) (*Server, error) {
 	s := &Server{
 		cfg:          cfg,
 		driver:       driver,
