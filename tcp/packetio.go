@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"bufio"
+	"context"
 	"github.com/frankhang/util/errors"
 	"time"
 )
@@ -12,11 +13,11 @@ const (
 )
 
 type PacketReader interface{
-	ReadPacket() ([]byte, error)
+	ReadPacket(ctx context.Context) ([]byte, error)
 }
 
 type PacketWriter interface{
-	WritePacket(data []byte) error
+	WritePacket(ctx context.Context, data []byte) error
 }
 
 // PacketIO is a helper to read and write data in packet format.
@@ -48,13 +49,10 @@ func (p *PacketIO) flush() error {
 
 func (p *PacketIO) SetReadTimeout() {
 
-
-	//panic(errors.New("Test Panic"))
 	waitTimeout := time.Duration(p.server.cfg.ReadTimeout)*time.Second
 	if waitTimeout > 0 {
-		if err := p.BufReadConn.SetReadDeadline(time.Now().Add(waitTimeout)); err != nil {
-			panic(err)
-		}
+		err := p.BufReadConn.SetReadDeadline(time.Now().Add(waitTimeout))
+		errors.MustNil(err)
 	}
 
 }

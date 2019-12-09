@@ -530,7 +530,7 @@ func MustNil(err error, closeFuns ...func()) {
 		for _, f := range closeFuns {
 			f()
 		}
-		log.Fatalf(ErrorStack(err))
+		log.Panicf(ErrorStack(err))
 	}
 }
 

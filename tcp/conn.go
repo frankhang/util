@@ -183,7 +183,7 @@ func (cc *ClientConn) Run(ctx context.Context) {
 		//waitTimeout := cc.getSessionVarsWaitTimeout(ctx)
 
 		start := time.Now()
-		data, err := cc.pkt.ReadPacket()
+		data, err := cc.pkt.ReadPacket(ctx)
 		if err != nil {
 			if errors.ErrorNotEqual(err, io.EOF) {
 				if netErr, isNetErr := errors.Cause(err).(net.Error); isNetErr && netErr.Timeout() {
