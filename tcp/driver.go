@@ -31,5 +31,5 @@ type QueryCtx interface {
 
 //Handler is the inteterface to handle the packet
 type Handler interface {
-	Handle(ctx context.Context, cc *ClientConn, data []byte) error
+	Handle(ctx context.Context, cc *ClientConn, header, data []byte) error
 }

@@ -13,7 +13,7 @@ const (
 )
 
 type PacketReader interface{
-	ReadPacket(ctx context.Context) ([]byte, error)
+	ReadPacket(ctx context.Context) ([]byte, []byte, error)
 }
 
 type PacketWriter interface{

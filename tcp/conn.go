@@ -42,7 +42,7 @@ func newClientConn(s *Server) *ClientConn {
 // ClientConn represents a connection between server and client, it maintains connection specific state,
 // handles client query.
 type ClientConn struct {
-	Handler           //handle packet
+	Handler //handle packet
 
 	pkt          *PacketIO         // a helper to read and write data in packet format.
 	BufReadConn  *bufferedReadConn // a buffered-read net.Conn or buffered-read tls.Conn.
@@ -75,7 +75,7 @@ func (cc *ClientConn) GetLastPacket() string {
 // during handshake, client and server negotiate compatible features and do authentication.
 // After handshake, client can send sql query to server.
 func (cc *ClientConn) handshake(ctx context.Context) error {
-	return nil;
+	return nil
 }
 
 func (cc *ClientConn) Close() error {
@@ -100,8 +100,6 @@ func (cc *ClientConn) closeWithoutLock() error {
 	delete(cc.server.clients, cc.ConnectionID)
 	return closeConn(cc, len(cc.server.clients))
 }
-
-
 
 //func (cc *ClientConn) WritePacket(data []byte) error {
 //	failpoint.Inject("FakeClientConn", func() {
@@ -149,7 +147,7 @@ func (cc *ClientConn) PeerHost(hasPassword string) (host string, err error) {
 // it will be recovered and log the panic error.
 // This function returns and the connection is closed if there is an IO error or there is a panic.
 func (cc *ClientConn) Run(ctx context.Context) {
-	const size = 4096
+	const size = 8192
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -157,15 +155,17 @@ func (cc *ClientConn) Run(ctx context.Context) {
 			stackSize := runtime.Stack(buf, false)
 			buf = buf[:stackSize]
 			logutil.Logger(ctx).Error("connection running loop panic",
-				zap.String("lastPacket", cc.GetLastPacket()),
+				zap.String("connInfo", cc.String()),
+				//zap.String("lastPacket", cc.GetLastPacket()), already set in context
 				zap.String("err", fmt.Sprintf("%v", r)),
-				//zap.String("stack", string(buf)),
+				zap.String("stack", string(buf)),
 			)
 			metrics.PanicCounter.WithLabelValues(metrics.LabelSession).Inc()
 		}
 		if atomic.LoadInt32(&cc.status) != connStatusShutdown {
 			err := cc.Close()
 			errors.Log(err)
+
 		}
 	}()
 	// Usually, client connection status changes between [dispatching] <=> [reading].
@@ -183,7 +183,7 @@ func (cc *ClientConn) Run(ctx context.Context) {
 		//waitTimeout := cc.getSessionVarsWaitTimeout(ctx)
 
 		start := time.Now()
-		data, err := cc.pkt.ReadPacket(ctx)
+		header, data, err := cc.pkt.ReadPacket(ctx)
 		if err != nil {
 			if errors.ErrorNotEqual(err, io.EOF) {
 				if netErr, isNetErr := errors.Cause(err).(net.Error); isNetErr && netErr.Timeout() {
@@ -209,31 +209,35 @@ func (cc *ClientConn) Run(ctx context.Context) {
 		}
 
 		startTime := time.Now()
-		if err = cc.dispatch(ctx, data); err != nil {
+		if err = cc.dispatch(ctx, header, data); err != nil {
 			if errors.ErrorEqual(err, io.EOF) {
 				cc.addMetrics(data[0], startTime, nil)
 				return
-			} else if errors.ErrCritical.Equal(err) {
+			}
+
+			buf := make([]byte, size)
+			stackSize := runtime.Stack(buf, false)
+			buf = buf[:stackSize]
+			logutil.Logger(ctx).Error("command dispatched failed",
+				zap.String("connInfo", cc.String()),
+				//zap.String("lastPacket", cc.GetLastPacket()), already set in context
+				zap.String("err", fmt.Sprintf("%v", err)),
+				zap.String("stack", string(buf)),
+			)
+
+			if errors.ErrCritical.Equal(err) {
 				logutil.Logger(ctx).Error("critical error, stop the server listener", zap.Error(err))
 				metrics.CriticalErrorCounter.Add(1)
 				select {
 				case cc.server.stopListenerCh <- struct{}{}:
 				default:
 				}
-				return
 			}
-			logutil.Logger(ctx).Warn("command dispatched failed",
-				zap.String("connInfo", cc.String()),
-				//zap.String("command", mysql.Command2Str[data[0]]),
-				//zap.String("status", cc.SessionStatusToString()),
-				zap.String("lastPacket", cc.GetLastPacket()),
-				zap.String("err", errors.ErrorStack(err)),
-			)
 			//err1 := cc.writeError(err)
 			//errors.Log(err1)
 		}
 		cc.addMetrics(data[0], startTime, err)
-		cc.pkt.sequence = 0
+		//cc.pkt.sequence = 0
 	}
 }
 
@@ -268,7 +272,7 @@ func (cc *ClientConn) addMetrics(cmd byte, startTime time.Time, err error) {
 // dispatch handles client request based on command which is the first byte of the data.
 // It also gets a token from server which is used to limit the concurrently handling clients.
 // The most frequently used command is ComQuery.
-func (cc *ClientConn) dispatch(ctx context.Context, data []byte) error {
+func (cc *ClientConn) dispatch(ctx context.Context, header []byte, data []byte) error {
 	span := opentracing.StartSpan("server.dispatch")
 
 	cc.lastPacket = data
@@ -280,7 +284,7 @@ func (cc *ClientConn) dispatch(ctx context.Context, data []byte) error {
 		span.Finish()
 	}()
 
-	if err := cc.Handle(ctx, cc, data); err != nil {
+	if err := cc.Handle(ctx, cc, header, data); err != nil {
 		return err
 	}
 	return cc.pkt.flush()
@@ -301,7 +305,6 @@ func (cc *ClientConn) setConn(conn net.Conn) {
 	if cc.pkt == nil {
 		//cc.pkt = newPacketIO(cc.bufReadConn, svr.packetReader, svr.packetWriter)
 		cc.pkt = svr.driver.GeneratePacketIO(cc)
-
 
 	}
 	//else {
