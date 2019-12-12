@@ -9,14 +9,13 @@ import (
 
 const (
 	defaultWriterSize = 16 * 1024
-
 )
 
-type PacketReader interface{
+type PacketReader interface {
 	ReadPacket(ctx context.Context) ([]byte, []byte, error)
 }
 
-type PacketWriter interface{
+type PacketWriter interface {
 	WritePacket(ctx context.Context, data []byte) error
 }
 
@@ -27,8 +26,7 @@ type PacketIO struct {
 	*ClientConn
 	*bufio.Writer
 
-	sequence    uint8
-
+	sequence uint8
 }
 
 func NewPacketIO(cc *ClientConn) *PacketIO {
@@ -38,21 +36,18 @@ func NewPacketIO(cc *ClientConn) *PacketIO {
 	return p
 }
 
-
 func (p *PacketIO) flush() error {
 	err := p.Writer.Flush()
-	if err != nil {
-		return errors.Trace(err)
-	}
-	return err
+	return errors.Trace(err)
+
 }
 
 func (p *PacketIO) SetReadTimeout() {
 
-	waitTimeout := time.Duration(p.server.cfg.ReadTimeout)*time.Second
+	waitTimeout := time.Duration(p.server.cfg.ReadTimeout) * time.Second
 	if waitTimeout > 0 {
 		err := p.BufReadConn.SetReadDeadline(time.Now().Add(waitTimeout))
-		errors.MustNil(err)
+		errors.MustNil(errors.Trace(err))
 	}
 
 }

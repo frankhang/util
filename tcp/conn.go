@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -52,24 +51,34 @@ type ClientConn struct {
 	ConnectionID uint32            // atomically allocated by a global variable, unique in process scope.
 	salt         []byte            // random bytes used for authentication.
 	Alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
-	lastPacket   []byte            // latest sql query string, currently used for logging error.
-	ctx          QueryCtx          // an interface to execute sql statements.
-	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
-	peerHost     string            // peer host
-	peerPort     string            // peer port
-	status       int32             // dispatching/reading/shutdown/waitshutdown
-	lastCode     uint16            // last error code
+	PacketHeader []byte
+	PacketData   []byte
+
+	ctx      QueryCtx          // an interface to execute sql statements.
+	attrs    map[string]string // attributes parsed from client handshake response, not used for now.
+	peerHost string            // peer host
+	peerPort string            // peer port
+	status   int32             // dispatching/reading/shutdown/waitshutdown
+	lastCode uint16            // last error code
 }
 
 func (cc *ClientConn) String() string {
-	return fmt.Sprintf("id:%d, addr:%s status:%b",
-		cc.ConnectionID, cc.BufReadConn.RemoteAddr(), cc.ctx.Status(),
+	//return fmt.Sprintf("id:%d, addr:%s status:%b",
+	//	cc.ConnectionID,
+	//	cc.BufReadConn.RemoteAddr(),
+	//	cc.ctx.Status(),
+	//)
+
+	return fmt.Sprintf("id:%d, addr:%s",
+		cc.ConnectionID,
+		cc.BufReadConn.RemoteAddr(),
 	)
+
 }
 
-func (cc *ClientConn) GetLastPacket() string {
-	return fmt.Sprintf("%x", cc.lastPacket)
-}
+//func (cc *ClientConn) GetLastPacket() string {
+//	return fmt.Sprintf("%x%x", cc.lastPacket)
+//}
 
 // handshake works like TCP handshake, but in a higher level, it first writes initial packet to client,
 // during handshake, client and server negotiate compatible features and do authentication.
@@ -89,7 +98,7 @@ func (cc *ClientConn) Close() error {
 func closeConn(cc *ClientConn, connections int) error {
 	metrics.ConnGauge.Set(float64(connections))
 	err := cc.BufReadConn.Close()
-	errors.Log(err)
+	errors.Log(errors.Trace(err))
 	if cc.ctx != nil {
 		return cc.ctx.Close()
 	}
@@ -156,15 +165,15 @@ func (cc *ClientConn) Run(ctx context.Context) {
 			buf = buf[:stackSize]
 			logutil.Logger(ctx).Error("connection running loop panic",
 				zap.String("connInfo", cc.String()),
-				//zap.String("lastPacket", cc.GetLastPacket()), already set in context
-				zap.String("err", fmt.Sprintf("%v", r)),
+				//zap.String("lastPacket", cc.GetLastPacket()),
+				zap.String("err", fmt.Sprintf("%+v", r)),
 				zap.String("stack", string(buf)),
 			)
 			metrics.PanicCounter.WithLabelValues(metrics.LabelSession).Inc()
 		}
 		if atomic.LoadInt32(&cc.status) != connStatusShutdown {
 			err := cc.Close()
-			errors.Log(err)
+			errors.Log(errors.Trace(err))
 
 		}
 	}()
@@ -194,10 +203,17 @@ func (cc *ClientConn) Run(ctx context.Context) {
 						zap.Error(err),
 					)
 				} else {
+					err = errors.Trace(err)
 					errStack := errors.ErrorStack(err)
 					if !strings.Contains(errStack, "use of closed network connection") {
 						logutil.Logger(ctx).Warn("read packet failed, close this connection",
-							zap.Error(errors.SuspendStack(err)))
+							zap.String("connInfo", cc.String()),
+							//zap.String("lastPacket", cc.GetLastPacket()),
+							//zap.Error(errors.SuspendStack(err)),
+							//zap.Error(err),
+							zap.String("err", errStack),
+						)
+						errors.Log(err)
 					}
 				}
 			}
@@ -214,16 +230,13 @@ func (cc *ClientConn) Run(ctx context.Context) {
 				cc.addMetrics(data[0], startTime, nil)
 				return
 			}
-
-			buf := make([]byte, size)
-			stackSize := runtime.Stack(buf, false)
-			buf = buf[:stackSize]
+			err = errors.Trace(err)
 			logutil.Logger(ctx).Error("command dispatched failed",
 				zap.String("connInfo", cc.String()),
-				//zap.String("lastPacket", cc.GetLastPacket()), already set in context
-				zap.String("err", fmt.Sprintf("%v", err)),
-				zap.String("stack", string(buf)),
+				//zap.String("lastPacket", cc.GetLastPacket()),
+				zap.String("err", errors.ErrorStack(err)),
 			)
+			errors.Log(err)
 
 			if errors.ErrCritical.Equal(err) {
 				logutil.Logger(ctx).Error("critical error, stop the server listener", zap.Error(err))
@@ -275,9 +288,9 @@ func (cc *ClientConn) addMetrics(cmd byte, startTime time.Time, err error) {
 func (cc *ClientConn) dispatch(ctx context.Context, header []byte, data []byte) error {
 	span := opentracing.StartSpan("server.dispatch")
 
-	cc.lastPacket = data
-	ctx = logutil.WithKeyValue(ctx, "length", strconv.Itoa(len(cc.lastPacket)))
-	ctx = logutil.WithKeyValue(ctx, "packet", fmt.Sprintf("%x", cc.lastPacket))
+	cc.PacketHeader = header
+	cc.PacketData = data
+
 	token := cc.server.getToken()
 	defer func() {
 		cc.server.releaseToken(token)
@@ -285,9 +298,12 @@ func (cc *ClientConn) dispatch(ctx context.Context, header []byte, data []byte) 
 	}()
 
 	if err := cc.Handle(ctx, cc, header, data); err != nil {
-		return err
+		return errors.Trace(err)
 	}
-	return cc.pkt.flush()
+	if err := cc.pkt.flush(); err != nil {
+		return errors.Trace(err)
+	}
+	return nil
 }
 
 //func (cc *ClientConn) flush() error {

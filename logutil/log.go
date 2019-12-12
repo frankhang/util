@@ -353,8 +353,8 @@ func WithConnID(ctx context.Context, connID uint32) context.Context {
 	return context.WithValue(ctx, ctxLogKey, logger.With(zap.Uint32("conn", connID)))
 }
 
-// WithKeyValue attaches key/value to context.
-func WithKeyValue(ctx context.Context, key, value string) context.Context {
+// WithString attaches key/string to context.
+func WithString(ctx context.Context, key, value string) context.Context {
 	var logger *zap.Logger
 	if ctxLogger, ok := ctx.Value(ctxLogKey).(*zap.Logger); ok {
 		logger = ctxLogger
@@ -362,6 +362,18 @@ func WithKeyValue(ctx context.Context, key, value string) context.Context {
 		logger = zaplog.L()
 	}
 	return context.WithValue(ctx, ctxLogKey, logger.With(zap.String(key, value)))
+}
+
+
+// WithString attaches key/int to context.
+func WithInt(ctx context.Context, key string, value int) context.Context {
+	var logger *zap.Logger
+	if ctxLogger, ok := ctx.Value(ctxLogKey).(*zap.Logger); ok {
+		logger = ctxLogger
+	} else {
+		logger = zaplog.L()
+	}
+	return context.WithValue(ctx, ctxLogKey, logger.With(zap.Int(key, value)))
 }
 
 // TraceEventKey presents the TraceEventKey in span log.

@@ -210,7 +210,7 @@ func (s *testLogSuite) TestZapLoggerWithKeys(c *C) {
 	c.Assert(err, IsNil)
 	key := "ctxKey"
 	val := "ctxValue"
-	ctx1 := WithKeyValue(context.Background(), key, val)
+	ctx1 := WithString(context.Background(), key, val)
 	s.testZapLogger(ctx1, c, fileCfg.Filename, zapLogWithKeyValPattern)
 	os.Remove(fileCfg.Filename)
 }
