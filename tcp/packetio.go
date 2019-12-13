@@ -51,3 +51,10 @@ func (p *PacketIO) SetReadTimeout() {
 	}
 
 }
+
+func (p *PacketIO) WritePacket(ctx context.Context, data []byte) error {
+	//println("packetio： WritePacket")
+	_, err := p.Write(data)
+	return errors.Trace(err)
+
+}
