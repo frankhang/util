@@ -92,23 +92,7 @@ const (
 	syntaxErrorPrefix = "You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use"
 )
 
-// SyntaxError converts parser error to TiDB's syntax error.
-func SyntaxError(err error) error {
-	if err == nil {
-		return nil
-	}
-	logutil.BgLogger().Error("syntax error", zap.Error(err))
 
-	// If the error is already a terror with stack, pass it through.
-	if errors.HasStack(err) {
-		//cause := errors.Cause(err)
-		//if _, ok := cause.(*terror.Error); ok {
-		//	return err
-		//}
-	}
-
-	return parser.ErrParse.GenWithStackByArgs(syntaxErrorPrefix, err.Error())
-}
 
 // SyntaxWarn converts parser warn to TiDB's syntax warn.
 func SyntaxWarn(err error) error {

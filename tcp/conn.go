@@ -17,7 +17,6 @@ import (
 	"github.com/frankhang/util/metrics"
 
 	"github.com/opentracing/opentracing-go"
-	//"github.com/pingcap/failpoint"
 	"go.uber.org/zap"
 )
 
