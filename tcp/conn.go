@@ -144,7 +144,7 @@ func (cc *ClientConn) PeerHost(hasPassword string) (host string, err error) {
 	var port string
 	host, port, err = net.SplitHostPort(addr)
 	if err != nil {
-		err = ErrPeerHost.GenWithStackByArgs(addr)
+		err = errors.Trace(err)
 		return
 	}
 	cc.peerHost = host

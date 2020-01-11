@@ -50,14 +50,7 @@ func init() {
 	}
 }
 
-var (
-	errInvalidSequence = errors.ClassServer.New(codeInvalidSequence, "invalid sequence")
 
-	//errUnknownFieldType  = terror.ClassServer.New(codeUnknownFieldType, "unknown field type")
-	//errInvalidType       = terror.ClassServer.New(codeInvalidType, "invalid type")
-	//errNotAllowedCommand = terror.ClassServer.New(codeNotAllowedCommand, "the used command is not allowed with this TiDB version")
-	//errAccessDenied      = terror.ClassServer.New(codeAccessDenied, mysql.MySQLErrName[mysql.ErrAccessDenied])
-)
 
 // Server is the MySQL protocol server
 type Server struct {

@@ -550,34 +550,9 @@ func Log(err error) {
 }
 
 const (
-	ClassAutoid ErrClass = iota - 1000
-	ClassDDL
-	ClassDomain
-	ClassEvaluator
-	ClassExecutor
-	ClassExpression
-	ClassAdmin
-	ClassKV
-	ClassMeta
-	ClassOptimizer
-	ClassParser
-	ClassPerfSchema
-	ClassPrivilege
-	ClassSchema
-	ClassServer
-	ClassStructure
-	ClassVariable
-	ClassXEval
-	ClassTable
-	ClassTypes
-	ClassGlobal
-	ClassMockTikv
-	ClassJSON
-	ClassTiKV
-	ClassSession
-	ClassPlugin
+	ClassGlobal ErrClass = iota - 1000
+	ClassClient
 	ClassUtil
-	// Add more as needed.
 )
 
 const (
@@ -593,29 +568,7 @@ var (
 )
 
 var ErrClz2Str = map[ErrClass]string{
-	ClassAutoid:     "autoid",
-	ClassDDL:        "ddl",
-	ClassDomain:     "domain",
-	ClassExecutor:   "executor",
-	ClassExpression: "expression",
-	ClassAdmin:      "admin",
-	ClassMeta:       "meta",
-	ClassKV:         "kv",
-	ClassOptimizer:  "planner",
-	ClassParser:     "parser",
-	ClassPerfSchema: "perfschema",
-	ClassPrivilege:  "privilege",
-	ClassSchema:     "schema",
-	ClassServer:     "server",
-	ClassStructure:  "structure",
-	ClassVariable:   "variable",
-	ClassTable:      "table",
-	ClassTypes:      "types",
-	ClassGlobal:     "global",
-	ClassMockTikv:   "mocktikv",
-	ClassJSON:       "json",
-	ClassTiKV:       "tikv",
-	ClassSession:    "session",
-	ClassPlugin:     "plugin",
-	ClassUtil:       "util",
+	ClassGlobal: "global",
+	ClassClient: "client",
+	ClassUtil:   "util",
 }
