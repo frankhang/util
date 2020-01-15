@@ -52,6 +52,30 @@ func (p *PacketIO) SetReadTimeout() {
 
 }
 
+func (p *PacketIO) ResetReadTimeout() {
+
+	err := p.BufReadConn.SetReadDeadline(time.Time{})
+	errors.MustNil(errors.Trace(err))
+
+}
+
+func (p *PacketIO) SetWriteTimeout() {
+
+	waitTimeout := time.Duration(p.server.cfg.ReadTimeout) * time.Second
+	if waitTimeout > 0 {
+		err := p.BufReadConn.SetWriteDeadline(time.Now().Add(waitTimeout))
+		errors.MustNil(errors.Trace(err))
+	}
+
+}
+
+func (p *PacketIO) ResetWriteTimeout() {
+
+	err := p.BufReadConn.SetWriteDeadline(time.Time{})
+	errors.MustNil(errors.Trace(err))
+
+}
+
 func (p *PacketIO) WritePacket(ctx context.Context, data []byte) error {
 	//println("packetio： WritePacket")
 	_, err := p.Write(data)
