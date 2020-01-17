@@ -173,30 +173,10 @@ func NewServer(cfg *config.Config, driver IDriver) (*Server, error) {
 		addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
 		if s.listener, err = net.Listen("tcp", addr); err == nil {
 			logutil.BgLogger().Info("server is running...", zap.String("addr", addr))
-			if cfg.Socket != "" {
-				if s.socket, err = net.Listen("unix", s.cfg.Socket); err == nil {
-					logutil.BgLogger().Info("server redirecting", zap.String("from", s.cfg.Socket), zap.String("to", addr))
-					go s.forwardUnixSocketToTCP()
-				}
-			}
-		}
-	} else if cfg.Socket != "" {
-		if s.listener, err = net.Listen("unix", cfg.Socket); err == nil {
-			logutil.BgLogger().Info("server is running on unix socket...", zap.String("socket", cfg.Socket))
+
 		}
 	} else {
 		err = errors.New("Server not configured to listen on either -socket or -host and -port")
-	}
-
-	if cfg.ProxyProtocol.Networks != "" {
-		pplistener, errProxy := proxyprotocol.NewListener(s.listener, cfg.ProxyProtocol.Networks,
-			int(cfg.ProxyProtocol.HeaderTimeout))
-		if errProxy != nil {
-			logutil.BgLogger().Error("ProxyProtocol networks parameter invalid")
-			return nil, errors.Trace(errProxy)
-		}
-		logutil.BgLogger().Info("server is running protocol (through PROXY protocol)", zap.String("host", s.cfg.Host))
-		s.listener = pplistener
 	}
 
 	if err != nil {

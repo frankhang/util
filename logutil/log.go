@@ -56,12 +56,10 @@ func NewFileLogConfig(maxSize uint) FileLogConfig {
 type LogConfig struct {
 	zaplog.Config
 
-	// SlowQueryFile filename, default to File log config on empty.
-	SlowQueryFile string
 }
 
 // NewLogConfig creates a LogConfig.
-func NewLogConfig(level, format, slowQueryFile string, fileCfg FileLogConfig, disableTimestamp bool, opts ...func(*zaplog.Config)) *LogConfig {
+func NewLogConfig(level, format string, fileCfg FileLogConfig, disableTimestamp bool, opts ...func(*zaplog.Config)) *LogConfig {
 	c := &LogConfig{
 		Config: zaplog.Config{
 			Level:            level,
@@ -69,7 +67,7 @@ func NewLogConfig(level, format, slowQueryFile string, fileCfg FileLogConfig, di
 			DisableTimestamp: disableTimestamp,
 			File:             fileCfg.FileLogConfig,
 		},
-		SlowQueryFile: slowQueryFile,
+
 	}
 	for _, opt := range opts {
 		opt(&c.Config)
@@ -257,16 +255,6 @@ func InitLogger(cfg *LogConfig) error {
 		}
 	}
 
-	if len(cfg.SlowQueryFile) != 0 {
-		SlowQueryLogger = log.New()
-		tmp := cfg.File
-		tmp.Filename = cfg.SlowQueryFile
-		if err := initFileLog(&tmp, SlowQueryLogger); err != nil {
-			return errors.Trace(err)
-		}
-		SlowQueryLogger.Formatter = &slowLogFormatter{}
-	}
-
 	return nil
 }
 
@@ -277,26 +265,6 @@ func InitZapLogger(cfg *LogConfig) error {
 		return errors.Trace(err)
 	}
 	zaplog.ReplaceGlobals(gl, props)
-
-	if len(cfg.SlowQueryFile) != 0 {
-		sqfCfg := zaplog.FileLogConfig{
-			MaxSize:  cfg.File.MaxSize,
-			Filename: cfg.SlowQueryFile,
-		}
-		sqCfg := &zaplog.Config{
-			Level:            cfg.Level,
-			Format:           cfg.Format,
-			DisableTimestamp: cfg.DisableTimestamp,
-			File:             sqfCfg,
-		}
-		sqLogger, _, err := zaplog.InitLogger(sqCfg)
-		if err != nil {
-			return errors.Trace(err)
-		}
-		SlowQueryZapLogger = sqLogger
-	} else {
-		SlowQueryZapLogger = gl
-	}
 
 	return nil
 }

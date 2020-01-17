@@ -61,7 +61,7 @@ func (p *PacketIO) ResetReadTimeout() {
 
 func (p *PacketIO) SetWriteTimeout() {
 
-	waitTimeout := time.Duration(p.server.cfg.ReadTimeout) * time.Second
+	waitTimeout := time.Duration(p.server.cfg.WriteTimeout) * time.Second
 	if waitTimeout > 0 {
 		err := p.BufReadConn.SetWriteDeadline(time.Now().Add(waitTimeout))
 		errors.MustNil(errors.Trace(err))

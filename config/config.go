@@ -29,64 +29,20 @@ const (
 )
 
 // Valid config maps
-var (
-	ValidStorage = map[string]bool{
-		"mocktikv": true,
-		"tikv":     true,
-	}
-	// checkTableBeforeDrop enable to execute `admin check table` before `drop table`.
-	CheckTableBeforeDrop = false
-	// checkBeforeDropLDFlag is a go build flag.
-	checkBeforeDropLDFlag = "None"
-)
+var ()
 
 // Config contains configuration options.
 type Config struct {
-	Host             string          `toml:"host" json:"host"`
-	AdvertiseAddress string          `toml:"advertise-address" json:"advertise-address"`
-	Port             uint            `toml:"port" json:"port"`
-	ReadTimeout      uint            `toml:"read-timeout" json:"read-timeout"`
-	Cors             string          `toml:"cors" json:"cors"`
-	Store            string          `toml:"store" json:"store"`
-	Path             string          `toml:"path" json:"path"`
-	Socket           string          `toml:"socket" json:"socket"`
-	Lease            string          `toml:"lease" json:"lease"`
-	RunDDL           bool            `toml:"run-ddl" json:"run-ddl"`
-	SplitTable       bool            `toml:"split-table" json:"split-table"`
-	TokenLimit       uint            `toml:"token-limit" json:"token-limit"`
-	OOMUseTmpStorage bool            `toml:"oom-use-tmp-storage" json:"oom-use-tmp-storage"`
-	OOMAction        string          `toml:"oom-action" json:"oom-action"`
-	MemQuotaQuery    int64           `toml:"mem-quota-query" json:"mem-quota-query"`
-	EnableStreaming  bool            `toml:"enable-streaming" json:"enable-streaming"`
-	EnableBatchDML   bool            `toml:"enable-batch-dml" json:"enable-batch-dml"`
-	TxnLocalLatches  TxnLocalLatches `toml:"txn-local-latches" json:"txn-local-latches"`
-	// Set sys variable lower-case-table-names, ref: https://dev.mysql.com/doc/refman/5.7/en/identifier-case-sensitivity.html.
-	// TODO: We actually only support mode 2, which keeps the original case, but the comparison is case-insensitive.
-	LowerCaseTableNames int `toml:"lower-case-table-names" json:"lower-case-table-names"`
-
-	Log                 Log               `toml:"log" json:"log"`
-	Security            Security          `toml:"security" json:"security"`
-	Status              Status            `toml:"status" json:"status"`
-	Performance         Performance       `toml:"performance" json:"performance"`
-	PreparedPlanCache   PreparedPlanCache `toml:"prepared-plan-cache" json:"prepared-plan-cache"`
-	OpenTracing         OpenTracing       `toml:"opentracing" json:"opentracing"`
-	ProxyProtocol       ProxyProtocol     `toml:"proxy-protocol" json:"proxy-protocol"`
-	Binlog              Binlog            `toml:"binlog" json:"binlog"`
-	CompatibleKillQuery bool              `toml:"compatible-kill-query" json:"compatible-kill-query"`
-	Plugin              Plugin            `toml:"plugin" json:"plugin"`
-	PessimisticTxn      PessimisticTxn    `toml:"pessimistic-txn" json:"pessimistic-txn"`
-	CheckMb4ValueInUTF8 bool              `toml:"check-mb4-value-in-utf8" json:"check-mb4-value-in-utf8"`
-	// AlterPrimaryKey is used to control alter primary key feature.
-	AlterPrimaryKey bool `toml:"alter-primary-key" json:"alter-primary-key"`
-	// TreatOldVersionUTF8AsUTF8MB4 is use to treat old version table/column UTF8 charset as UTF8MB4. This is for compatibility.
-	// Currently not support dynamic modify, because this need to reload all old version schema.
-	TreatOldVersionUTF8AsUTF8MB4 bool `toml:"treat-old-version-utf8-as-utf8mb4" json:"treat-old-version-utf8-as-utf8mb4"`
-	// EnableTableLock indicate whether enable table lock.
-	// TODO: remove this after table lock features stable.
-	EnableTableLock     bool        `toml:"enable-table-lock" json:"enable-table-lock"`
-	DelayCleanTableLock uint64      `toml:"delay-clean-table-lock" json:"delay-clean-table-lock"`
-	SplitRegionMaxNum   uint64      `toml:"split-region-max-num" json:"split-region-max-num"`
-	StmtSummary         StmtSummary `toml:"stmt-summary" json:"stmt-summary"`
+	Host             string      `toml:"host" json:"host"`
+	AdvertiseAddress string      `toml:"advertise-address" json:"advertise-address"`
+	Port             uint        `toml:"port" json:"port"`
+	ReadTimeout      uint        `toml:"read-timeout" json:"read-timeout"`
+	WriteTimeout     uint        `toml:"write-timeout" json:"write-timeout"`
+	TokenLimit       uint        `toml:"token-limit" json:"token-limit"`
+	Log              Log         `toml:"log" json:"log"`
+	Status           Status      `toml:"status" json:"status"`
+	Performance      Performance `toml:"performance" json:"performance"`
+	OpenTracing      OpenTracing `toml:"opentracing" json:"opentracing"`
 }
 
 // nullableBool defaults unset bool options to unset instead of false, which enables us to know if the user has set 2
@@ -167,12 +123,6 @@ type Log struct {
 	EnableErrorStack nullableBool `toml:"enable-error-stack" json:"enable-error-stack"`
 	// File log config.
 	File logutil.FileLogConfig `toml:"file" json:"file"`
-
-	SlowQueryFile       string `toml:"slow-query-file" json:"slow-query-file"`
-	SlowThreshold       uint64 `toml:"slow-threshold" json:"slow-threshold"`
-	ExpensiveThreshold  uint   `toml:"expensive-threshold" json:"expensive-threshold"`
-	QueryLogMaxLen      uint64 `toml:"query-log-max-len" json:"query-log-max-len"`
-	RecordPlanInSlowLog uint32 `toml:"record-plan-in-slow-log" json:"record-plan-in-slow-log"`
 }
 
 func (l *Log) getDisableTimestamp() bool {
@@ -211,12 +161,12 @@ type Security struct {
 // This is needed only because logging hasn't been set up at the time we parse the config file.
 // This should all be ripped out once strict config checking is made the default behavior.
 type ErrConfigValidationFailed struct {
-	confFile       string
+	ConfFile       string
 	UndecodedItems []string
 }
 
 func (e *ErrConfigValidationFailed) Error() string {
-	return fmt.Sprintf("config file %s contained unknown configuration options: %s", e.confFile, strings.Join(e.UndecodedItems, ", "))
+	return fmt.Sprintf("config file %s contained unknown configuration options: %s", e.ConfFile, strings.Join(e.UndecodedItems, ", "))
 }
 
 // ToTLSConfig generates tls's config based on security section of the config.
@@ -266,39 +216,9 @@ type Status struct {
 
 // Performance is the performance section of the config.
 type Performance struct {
-	MaxProcs            uint    `toml:"max-procs" json:"max-procs"`
-	MaxMemory           uint64  `toml:"max-memory" json:"max-memory"`
-	StatsLease          string  `toml:"stats-lease" json:"stats-lease"`
-	StmtCountLimit      uint    `toml:"stmt-count-limit" json:"stmt-count-limit"`
-	FeedbackProbability float64 `toml:"feedback-probability" json:"feedback-probability"`
-	QueryFeedbackLimit  uint    `toml:"query-feedback-limit" json:"query-feedback-limit"`
-	PseudoEstimateRatio float64 `toml:"pseudo-estimate-ratio" json:"pseudo-estimate-ratio"`
-	ForcePriority       string  `toml:"force-priority" json:"force-priority"`
-	BindInfoLease       string  `toml:"bind-info-lease" json:"bind-info-lease"`
-	TxnTotalSizeLimit   uint64  `toml:"txn-total-size-limit" json:"txn-total-size-limit"`
-	TCPKeepAlive        bool    `toml:"tcp-keep-alive" json:"tcp-keep-alive"`
-	CrossJoin           bool    `toml:"cross-join" json:"cross-join"`
-	RunAutoAnalyze      bool    `toml:"run-auto-analyze" json:"run-auto-analyze"`
-}
-
-// PlanCache is the PlanCache section of the config.
-type PlanCache struct {
-	Enabled  bool `toml:"enabled" json:"enabled"`
-	Capacity uint `toml:"capacity" json:"capacity"`
-	Shards   uint `toml:"shards" json:"shards"`
-}
-
-// TxnLocalLatches is the TxnLocalLatches section of the config.
-type TxnLocalLatches struct {
-	Enabled  bool `toml:"enabled" json:"enabled"`
-	Capacity uint `toml:"capacity" json:"capacity"`
-}
-
-// PreparedPlanCache is the PreparedPlanCache section of the config.
-type PreparedPlanCache struct {
-	Enabled          bool    `toml:"enabled" json:"enabled"`
-	Capacity         uint    `toml:"capacity" json:"capacity"`
-	MemoryGuardRatio float64 `toml:"memory-guard-ratio" json:"memory-guard-ratio"`
+	MaxProcs     uint   `toml:"max-procs" json:"max-procs"`
+	MaxMemory    uint64 `toml:"max-memory" json:"max-memory"`
+	TCPKeepAlive bool   `toml:"tcp-keep-alive" json:"tcp-keep-alive"`
 }
 
 // OpenTracing is the opentracing section of the config.
@@ -328,125 +248,30 @@ type OpenTracingReporter struct {
 	LocalAgentHostPort  string        `toml:"local-agent-host-port" json:"local-agent-host-port"`
 }
 
-// ProxyProtocol is the PROXY protocol section of the config.
-type ProxyProtocol struct {
-	// PROXY protocol acceptable client networks.
-	// Empty string means disable PROXY protocol,
-	// * means all networks.
-	Networks string `toml:"networks" json:"networks"`
-	// PROXY protocol header read timeout, Unit is second.
-	HeaderTimeout uint `toml:"header-timeout" json:"header-timeout"`
-}
-
-// Binlog is the config for binlog.
-type Binlog struct {
-	Enable bool `toml:"enable" json:"enable"`
-	// If IgnoreError is true, when writing binlog meets error, TiDB would
-	// ignore the error.
-	IgnoreError  bool   `toml:"ignore-error" json:"ignore-error"`
-	WriteTimeout string `toml:"write-timeout" json:"write-timeout"`
-	// Use socket file to write binlog, for compatible with kafka version tidb-binlog.
-	BinlogSocket string `toml:"binlog-socket" json:"binlog-socket"`
-	// The strategy for sending binlog to pump, value can be "range" or "hash" now.
-	Strategy string `toml:"strategy" json:"strategy"`
-}
-
-// Plugin is the config for plugin
-type Plugin struct {
-	Dir  string `toml:"dir" json:"dir"`
-	Load string `toml:"load" json:"load"`
-}
-
-// PessimisticTxn is the config for pessimistic transaction.
-type PessimisticTxn struct {
-	// Enable must be true for 'begin lock' or session variable to start a pessimistic transaction.
-	Enable bool `toml:"enable" json:"enable"`
-	// The max count of retry for a single statement in a pessimistic transaction.
-	MaxRetryCount uint `toml:"max-retry-count" json:"max-retry-count"`
-}
-
-// StmtSummary is the config for statement summary.
-type StmtSummary struct {
-	// The maximum number of statements kept in memory.
-	MaxStmtCount uint `toml:"max-stmt-count" json:"max-stmt-count"`
-	// The maximum length of displayed normalized SQL and sample SQL.
-	MaxSQLLength uint `toml:"max-sql-length" json:"max-sql-length"`
-}
-
-var defaultConf = Config{
-	Host:                         "0.0.0.0",
-	AdvertiseAddress:             "",
-	Port:                         10001,
-	Cors:                         "",
-	Store:                        "mocktikv",
-	Path:                         "/tmp/tidb",
-	RunDDL:                       true,
-	SplitTable:                   true,
-	Lease:                        "45s",
-	TokenLimit:                   1000,
-	OOMUseTmpStorage:             true,
-	OOMAction:                    "log",
-	MemQuotaQuery:                32 << 30,
-	EnableStreaming:              false,
-	EnableBatchDML:               false,
-	CheckMb4ValueInUTF8:          true,
-	AlterPrimaryKey:              false,
-	TreatOldVersionUTF8AsUTF8MB4: true,
-	EnableTableLock:              false,
-	DelayCleanTableLock:          0,
-	SplitRegionMaxNum:            1000,
-	TxnLocalLatches: TxnLocalLatches{
-		Enabled:  false,
-		Capacity: 2048000,
-	},
-	LowerCaseTableNames: 2,
-
-	ReadTimeout: 30,
+var DefaultConf = Config{
+	Host:             "0.0.0.0",
+	AdvertiseAddress: "",
+	Port:             10001,
+	TokenLimit:       1000,
+	ReadTimeout:      30,
+	WriteTimeout:     30,
 
 	Log: Log{
-		Level:               "info",
-		Format:              "text",
-		File:                logutil.NewFileLogConfig(logutil.DefaultLogMaxSize),
-		SlowQueryFile:       "tidb-slow.log",
-		SlowThreshold:       logutil.DefaultSlowThreshold,
-		ExpensiveThreshold:  10000,
-		DisableErrorStack:   nbUnset,
-		EnableErrorStack:    nbUnset, // If both options are nbUnset, getDisableErrorStack() returns true
-		EnableTimestamp:     nbUnset,
-		DisableTimestamp:    nbUnset, // If both options are nbUnset, getDisableTimestamp() returns false
-		QueryLogMaxLen:      logutil.DefaultQueryLogMaxLen,
-		RecordPlanInSlowLog: logutil.DefaultRecordPlanInSlowLog,
+		Level:  "info",
+		Format: "text",
+		File:   logutil.NewFileLogConfig(logutil.DefaultLogMaxSize),
 	},
 	Status: Status{
 		ReportStatus:    true,
 		StatusHost:      "0.0.0.0",
 		StatusPort:      10080,
 		MetricsInterval: 15,
-		RecordQPSbyDB:   false,
 	},
 	Performance: Performance{
-		MaxMemory:           0,
-		TCPKeepAlive:        true,
-		CrossJoin:           true,
-		StatsLease:          "3s",
-		RunAutoAnalyze:      true,
-		StmtCountLimit:      5000,
-		FeedbackProbability: 0.05,
-		QueryFeedbackLimit:  1024,
-		PseudoEstimateRatio: 0.8,
-		ForcePriority:       "NO_PRIORITY",
-		BindInfoLease:       "3s",
-		TxnTotalSizeLimit:   DefTxnTotalSizeLimit,
+		MaxMemory:    0,
+		TCPKeepAlive: true,
 	},
-	ProxyProtocol: ProxyProtocol{
-		Networks:      "",
-		HeaderTimeout: 5,
-	},
-	PreparedPlanCache: PreparedPlanCache{
-		Enabled:          false,
-		Capacity:         100,
-		MemoryGuardRatio: 0.1,
-	},
+
 	OpenTracing: OpenTracing{
 		Enable: false,
 		Sampler: OpenTracingSampler{
@@ -455,23 +280,10 @@ var defaultConf = Config{
 		},
 		Reporter: OpenTracingReporter{},
 	},
-
-	Binlog: Binlog{
-		WriteTimeout: "15s",
-		Strategy:     "range",
-	},
-	PessimisticTxn: PessimisticTxn{
-		Enable:        true,
-		MaxRetryCount: 256,
-	},
-	StmtSummary: StmtSummary{
-		MaxStmtCount: 100,
-		MaxSQLLength: 4096,
-	},
 }
 
 var (
-	globalConf              = atomic.Value{}
+	GlobalConf              = atomic.Value{}
 	reloadConfPath          = ""
 	confReloader            func(nc, c *Config)
 	confReloadLock          sync.Mutex
@@ -481,7 +293,7 @@ var (
 
 // NewConfig creates a new config instance with default value.
 func NewConfig() *Config {
-	conf := defaultConf
+	conf := DefaultConf
 	return &conf
 }
 
@@ -500,12 +312,12 @@ func SetConfReloader(cpath string, reloader func(nc, c *Config), confItems ...st
 // It should store configuration from command line and configuration file.
 // Other parts of the system can read the global configuration use this function.
 func GetGlobalConfig() *Config {
-	return globalConf.Load().(*Config)
+	return GlobalConf.Load().(*Config)
 }
 
-// StoreGlobalConfig stores a new config to the globalConf. It mostly uses in the test to avoid some data races.
+// StoreGlobalConfig stores a new config to the GlobalConf. It mostly uses in the test to avoid some data races.
 func StoreGlobalConfig(config *Config) {
-	globalConf.Store(config)
+	GlobalConf.Store(config)
 }
 
 // ReloadGlobalConfig reloads global configuration for this server.
@@ -542,7 +354,7 @@ func ReloadGlobalConfig() error {
 	}
 
 	confReloader(nc, c)
-	globalConf.Store(nc)
+	GlobalConf.Store(nc)
 	logutil.BgLogger().Info("reload config changes" + formattedDiff.String())
 	return nil
 }
@@ -581,7 +393,7 @@ func (c *Config) Load(confFile string) error {
 	if c.TokenLimit == 0 {
 		c.TokenLimit = 1000
 	}
-	// If any items in confFile file are not mapped into the Config struct, issue
+	// If any items in ConfFile file are not mapped into the Config struct, issue
 	// an error and stop the server from starting.
 	undecoded := metaData.Undecoded()
 	if len(undecoded) > 0 && err == nil {
@@ -611,10 +423,6 @@ func (c *Config) Valid() error {
 	if c.Log.File.MaxSize > MaxLogFileSize {
 		return fmt.Errorf("invalid max log file size=%v which is larger than max=%v", c.Log.File.MaxSize, MaxLogFileSize)
 	}
-	c.OOMAction = strings.ToLower(c.OOMAction)
-	if c.OOMAction != OOMActionLog && c.OOMAction != OOMActionCancel {
-		return fmt.Errorf("unsupported OOMAction %v, TiDB only supports [%v, %v]", c.OOMAction, OOMActionLog, OOMActionCancel)
-	}
 
 	return nil
 }
@@ -623,19 +431,9 @@ func hasRootPrivilege() bool {
 	return os.Geteuid() == 0
 }
 
-// TableLockEnabled uses to check whether enabled the table lock feature.
-func TableLockEnabled() bool {
-	return GetGlobalConfig().EnableTableLock
-}
-
-// TableLockDelayClean uses to get the time of delay clean table lock.
-var TableLockDelayClean = func() uint64 {
-	return GetGlobalConfig().DelayCleanTableLock
-}
-
 // ToLogConfig converts *Log to *logutil.LogConfig.
 func (l *Log) ToLogConfig() *logutil.LogConfig {
-	return logutil.NewLogConfig(l.Level, l.Format, l.SlowQueryFile, l.File, l.getDisableTimestamp(), func(config *zaplog.Config) { config.DisableErrorVerbose = l.getDisableErrorStack() })
+	return logutil.NewLogConfig(l.Level, l.Format, l.File, l.getDisableTimestamp(), func(config *zaplog.Config) { config.DisableErrorVerbose = l.getDisableErrorStack() })
 }
 
 // ToTracingConfig converts *OpenTracing to *tracing.Configuration.
@@ -660,17 +458,6 @@ func (t *OpenTracing) ToTracingConfig() *tracing.Configuration {
 }
 
 func init() {
-	globalConf.Store(&defaultConf)
-	if checkBeforeDropLDFlag == "1" {
-		CheckTableBeforeDrop = true
-	}
-}
+	GlobalConf.Store(&DefaultConf)
 
-// The following constants represents the valid action configurations for OOMAction.
-// NOTE: Although the values is case insensitive, we should use lower-case
-// strings because the configuration value will be transformed to lower-case
-// string and compared with these constants in the further usage.
-const (
-	OOMActionCancel = "cancel"
-	OOMActionLog    = "log"
-)
+}
