@@ -277,8 +277,10 @@ func (s *Server) onConn(conn *ClientConn) {
 		// Some keep alive services will send request to TiDB and disconnect immediately.
 		// So we only record metrics.
 		metrics.HandShakeErrorCounter.Inc()
-		err = conn.Close()
-		errors.Log(errors.Trace(err))
+		if err = conn.Close(); err != nil {
+			logutil.Logger(ctx).Error("onConn: handshake error", zap.Error(err))
+			errors.Log(errors.Trace(err))
+		}
 		return
 	}
 
@@ -332,7 +334,8 @@ func (s *Server) KillAllConnections() {
 	for _, conn := range s.clients {
 		atomic.StoreInt32(&conn.status, connStatusShutdown)
 		if err := conn.closeWithoutLock(); err != nil {
-			errors.Log(err)
+			logutil.BgLogger().Error("KillAllConnections: conn.closeWithoutLock error", zap.Error(err))
+			errors.Log(errors.Trace(err))
 		}
 		killConn(conn)
 	}
