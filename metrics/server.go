@@ -11,49 +11,23 @@ var (
 
 // Metrics
 var (
-	QueryDurationHistogram = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "handle_query_duration_seconds",
-			Help:      "Bucketed histogram of processing time (s) of handled queries.",
-			Buckets:   prometheus.ExponentialBuckets(0.0005, 2, 22), // 500us ~ 2097s
-		}, []string{LblSQLType})
 
-	QueryTotalCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "query_total",
-			Help:      "Counter of queries.",
-		}, []string{LblType, LblResult})
+
 
 	ConnGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Namespace: "iot",
-			Subsystem: "server",
+			Namespace: "frank",
+			Subsystem: "tcp",
 			Name:      "connections",
 			Help:      "Number of connections.",
 		})
 
-	PreparedStmtGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "tidb",
-		Subsystem: "server",
-		Name:      "prepared_stmts",
-		Help:      "number of prepared statements.",
-	})
 
-	ExecuteErrorCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "execute_error_total",
-			Help:      "Counter of execute errors.",
-		}, []string{LblType})
+
 
 	CriticalErrorCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "critical_error_total",
 			Help:      "Counter of critical errors.",
@@ -68,15 +42,15 @@ var (
 	EventClose         = "close"
 	ServerEventCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "event_total",
-			Help:      "Counter of tidb-server event.",
+			Help:      "Counter of erver event.",
 		}, []string{LblType})
 
 	TimeJumpBackCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "monitor",
 			Name:      "time_jump_back_total",
 			Help:      "Counter of system time jumps backward.",
@@ -84,23 +58,16 @@ var (
 
 	KeepAliveCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "monitor",
 			Name:      "keep_alive_total",
-			Help:      "Counter of TiDB keep alive.",
+			Help:      "Counter of keep alive.",
 		})
 
-	PlanCacheCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "plan_cache_total",
-			Help:      "Counter of query using plan cache.",
-		}, []string{LblType})
 
 	HandShakeErrorCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "handshake_error_total",
 			Help:      "Counter of hand shake error.",
@@ -109,7 +76,7 @@ var (
 
 	GetTokenDurationHistogram = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "get_token_duration_seconds",
 			Help:      "Duration (us) for getting token, it should be small until concurrency limit is reached.",
@@ -118,32 +85,16 @@ var (
 
 	TotalQueryProcHistogram = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "slow_query_process_duration_seconds",
 			Help:      "Bucketed histogram of processing time (s) of of slow queries.",
 			Buckets:   prometheus.ExponentialBuckets(0.001, 2, 22), // 1ms ~ 4096s
 		})
-	TotalCopProcHistogram = prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "slow_query_cop_duration_seconds",
-			Help:      "Bucketed histogram of all cop processing time (s) of of slow queries.",
-			Buckets:   prometheus.ExponentialBuckets(0.001, 2, 22), // 1ms ~ 4096s
-		})
-	TotalCopWaitHistogram = prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Namespace: "tidb",
-			Subsystem: "server",
-			Name:      "slow_query_wait_duration_seconds",
-			Help:      "Bucketed histogram of all cop waiting time (s) of of slow queries.",
-			Buckets:   prometheus.ExponentialBuckets(0.001, 2, 22), // 1ms ~ 4096s
-		})
 
 	CPUUsagePercentageGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "cpu_usage",
 			Help:      "Percentage of CPU usage.",

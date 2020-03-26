@@ -2,6 +2,27 @@ package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// Label constants.
+const (
+	LblUnretryable = "unretryable"
+	LblReachMax    = "reach_max"
+	LblOK          = "ok"
+	LblError       = "error"
+	LblCommit      = "commit"
+	LblAbort       = "abort"
+	LblRollback    = "rollback"
+	LblComRol      = "com_rol"
+	LblType        = "type"
+	LblDb          = "db"
+	LblResult      = "result"
+	LblSQLType     = "sql_type"
+	LblGeneral     = "general"
+	LblInternal    = "internal"
+	LblStore       = "store"
+	LblAddress     = "address"
+)
+
+
 var (
 	// PanicCounter measures the count of panics.
 	PanicCounter = prometheus.NewCounterVec(
@@ -47,102 +68,22 @@ func RetLabel(err error) string {
 func RegisterMetrics() {
 	prometheus.MustRegister(AutoAnalyzeCounter)
 	prometheus.MustRegister(AutoAnalyzeHistogram)
-	prometheus.MustRegister(AutoIDHistogram)
-	prometheus.MustRegister(BatchAddIdxHistogram)
-	prometheus.MustRegister(BindUsageCounter)
-	prometheus.MustRegister(BindTotalGauge)
-	prometheus.MustRegister(BindMemoryUsage)
-	prometheus.MustRegister(CampaignOwnerCounter)
 	prometheus.MustRegister(ConnGauge)
-	prometheus.MustRegister(PreparedStmtGauge)
 	prometheus.MustRegister(CriticalErrorCounter)
-	prometheus.MustRegister(DDLCounter)
-	prometheus.MustRegister(AddIndexTotalCounter)
-	prometheus.MustRegister(DDLWorkerHistogram)
-	prometheus.MustRegister(DeploySyncerHistogram)
-	prometheus.MustRegister(DistSQLPartialCountHistogram)
-	prometheus.MustRegister(DistSQLQueryHistgram)
-	prometheus.MustRegister(DistSQLScanKeysHistogram)
-	prometheus.MustRegister(DistSQLScanKeysPartialHistogram)
 	prometheus.MustRegister(DumpFeedbackCounter)
-	prometheus.MustRegister(ExecuteErrorCounter)
-	prometheus.MustRegister(ExecutorCounter)
 	prometheus.MustRegister(GetTokenDurationHistogram)
 	prometheus.MustRegister(HandShakeErrorCounter)
-	prometheus.MustRegister(HandleJobHistogram)
 	prometheus.MustRegister(SignificantFeedbackCounter)
 	prometheus.MustRegister(FastAnalyzeHistogram)
-	prometheus.MustRegister(JobsGauge)
 	prometheus.MustRegister(KeepAliveCounter)
-	prometheus.MustRegister(LoadPrivilegeCounter)
-	prometheus.MustRegister(LoadSchemaCounter)
-	prometheus.MustRegister(LoadSchemaDuration)
-	prometheus.MustRegister(MetaHistogram)
-	prometheus.MustRegister(NewSessionHistogram)
-	prometheus.MustRegister(OwnerHandleSyncerHistogram)
 	prometheus.MustRegister(PanicCounter)
-	prometheus.MustRegister(PlanCacheCounter)
 	prometheus.MustRegister(PseudoEstimation)
-	prometheus.MustRegister(QueryDurationHistogram)
-	prometheus.MustRegister(QueryTotalCounter)
-	prometheus.MustRegister(SchemaLeaseErrorCounter)
 	prometheus.MustRegister(ServerEventCounter)
-	prometheus.MustRegister(SessionExecuteCompileDuration)
-	prometheus.MustRegister(SessionExecuteParseDuration)
-	prometheus.MustRegister(SessionExecuteRunDuration)
-	prometheus.MustRegister(SessionRestrictedSQLCounter)
-	prometheus.MustRegister(SessionRetry)
-	prometheus.MustRegister(SessionRetryErrorCounter)
-	prometheus.MustRegister(StatementPerTransaction)
 	prometheus.MustRegister(StatsInaccuracyRate)
-	prometheus.MustRegister(StmtNodeCounter)
-	prometheus.MustRegister(DbStmtNodeCounter)
 	prometheus.MustRegister(StoreQueryFeedbackCounter)
 	prometheus.MustRegister(GetStoreLimitErrorCounter)
-	prometheus.MustRegister(TiKVBackoffCounter)
-	prometheus.MustRegister(TiKVBackoffHistogram)
-	prometheus.MustRegister(TiKVCoprocessorHistogram)
-	prometheus.MustRegister(TiKVLoadSafepointCounter)
-	prometheus.MustRegister(TiKVLockResolverCounter)
-	prometheus.MustRegister(TiKVRawkvCmdHistogram)
-	prometheus.MustRegister(TiKVRawkvSizeHistogram)
-	prometheus.MustRegister(TiKVRegionCacheCounter)
-	prometheus.MustRegister(TiKVRegionErrorCounter)
-	prometheus.MustRegister(TiKVSecondaryLockCleanupFailureCounter)
-	prometheus.MustRegister(TiKVSendReqHistogram)
-	prometheus.MustRegister(TiKVSnapshotCounter)
-	prometheus.MustRegister(TiKVTxnCmdCounter)
-	prometheus.MustRegister(TiKVTxnCmdHistogram)
-	prometheus.MustRegister(TiKVTxnCounter)
-	prometheus.MustRegister(TiKVTxnRegionsNumHistogram)
-	prometheus.MustRegister(TiKVTxnWriteKVCountHistogram)
-	prometheus.MustRegister(TiKVTxnWriteSizeHistogram)
-	prometheus.MustRegister(TiKVLocalLatchWaitTimeHistogram)
 	prometheus.MustRegister(TimeJumpBackCounter)
-	prometheus.MustRegister(TransactionCounter)
-	prometheus.MustRegister(TransactionDuration)
-	prometheus.MustRegister(UpdateSelfVersionHistogram)
 	prometheus.MustRegister(UpdateStatsCounter)
-	prometheus.MustRegister(WatchOwnerCounter)
-	prometheus.MustRegister(GCActionRegionResultCounter)
-	prometheus.MustRegister(GCConfigGauge)
-	prometheus.MustRegister(GCHistogram)
-	prometheus.MustRegister(GCJobFailureCounter)
-	prometheus.MustRegister(GCRegionTooManyLocksCounter)
-	prometheus.MustRegister(GCWorkerCounter)
-	prometheus.MustRegister(GCUnsafeDestroyRangeFailuresCounterVec)
-	prometheus.MustRegister(TSFutureWaitDuration)
 	prometheus.MustRegister(TotalQueryProcHistogram)
-	prometheus.MustRegister(TotalCopProcHistogram)
-	prometheus.MustRegister(TotalCopWaitHistogram)
 	prometheus.MustRegister(CPUUsagePercentageGauge)
-	prometheus.MustRegister(TiKVPendingBatchRequests)
-	prometheus.MustRegister(TiKVBatchWaitDuration)
-	prometheus.MustRegister(TiKVBatchClientUnavailable)
-	prometheus.MustRegister(TiKVRangeTaskStats)
-	prometheus.MustRegister(TiKVRangeTaskPushDuration)
-	prometheus.MustRegister(HandleSchemaValidate)
-	prometheus.MustRegister(TiKVTokenWaitDuration)
-	prometheus.MustRegister(TiKVTxnHeartBeatHistogram)
-	prometheus.MustRegister(GRPCConnTransientFailureCounter)
 }
