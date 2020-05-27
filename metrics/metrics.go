@@ -27,7 +27,7 @@ var (
 	// PanicCounter measures the count of panics.
 	PanicCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "server",
 			Name:      "panic_total",
 			Help:      "Counter of panic.",

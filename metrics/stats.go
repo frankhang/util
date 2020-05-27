@@ -8,7 +8,7 @@ import (
 var (
 	AutoAnalyzeHistogram = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "auto_analyze_duration_seconds",
 			Help:      "Bucketed histogram of processing time (s) of auto analyze.",
@@ -17,7 +17,7 @@ var (
 
 	AutoAnalyzeCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "auto_analyze_total",
 			Help:      "Counter of auto analyze.",
@@ -25,7 +25,7 @@ var (
 
 	StatsInaccuracyRate = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "stats_inaccuracy_rate",
 			Help:      "Bucketed histogram of stats inaccuracy rate.",
@@ -34,7 +34,7 @@ var (
 
 	PseudoEstimation = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "pseudo_estimation_total",
 			Help:      "Counter of pseudo estimation caused by outdated stats.",
@@ -42,7 +42,7 @@ var (
 
 	DumpFeedbackCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "dump_feedback_total",
 			Help:      "Counter of dumping feedback.",
@@ -50,7 +50,7 @@ var (
 
 	UpdateStatsCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "update_stats_total",
 			Help:      "Counter of updating stats using feedback.",
@@ -58,7 +58,7 @@ var (
 
 	StoreQueryFeedbackCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "store_query_feedback_total",
 			Help:      "Counter of storing query feedback.",
@@ -66,7 +66,7 @@ var (
 
 	GetStoreLimitErrorCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "get_store_limit_token_error",
 			Help:      "store token is up to the limit, probably because one of the stores is the hotspot or unavailable",
@@ -74,7 +74,7 @@ var (
 
 	SignificantFeedbackCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "high_error_rate_feedback_total",
 			Help:      "Counter of query feedback whose actual count is much different than calculated by current statistics",
@@ -82,7 +82,7 @@ var (
 
 	FastAnalyzeHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: "tidb",
+			Namespace: "frank",
 			Subsystem: "statistics",
 			Name:      "fast_analyze_status",
 			Help:      "Bucketed histogram of some stats in fast analyze.",
