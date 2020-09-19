@@ -2,7 +2,7 @@ module github.com/frankhang/util
 
 go 1.13
 
-//replace github.com/frankhang/util => /Users/hang/go/src/github.com/frankhang/util
+replace github.com/frankhang/util => /Users/hang/go/src/github.com/frankhang/util
 
 require (
 	github.com/golang/protobuf v1.4.2
