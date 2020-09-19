@@ -10,9 +10,6 @@ var (
 	crc_tabccitt_init bool
 )
 
-func init() {
-	init_crcccitt_tab()
-}
 
 /*
  * uint16_t crc_ccitt_ffff( const unsigned char *input_str, size_t num_bytes );
