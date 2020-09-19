@@ -1,11 +1,5 @@
 package util
 
-import (
-	//"fmt"
-	//"bytes"
-	//"encoding/binary"
-)
-
 var MbTable = []uint16{
 	0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
 	0XC601, 0X06C0, 0X0780, 0XC741, 0X0500, 0XC5C1, 0XC481, 0X0440,
@@ -40,17 +34,50 @@ var MbTable = []uint16{
 	0X4400, 0X84C1, 0X8581, 0X4540, 0X8701, 0X47C0, 0X4680, 0X8641,
 	0X8201, 0X42C0, 0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040}
 
-func Crc16(data []byte) uint16 {
-	var crc16 uint16
-	crc16 = 0xffff
-	for _, v := range data {
-		n := uint8(uint16(v)^crc16)
-		crc16 >>= 8
-		crc16 ^= MbTable[n]
-	}
-	return crc16
-}
+//func Crc16(data []byte) uint16 {
+//	var crc16 uint16
+//	crc16 = 0xffff
+//	for _, v := range data {
+//		n := uint8(uint16(v)^crc16)
+//		crc16 >>= 8
+//		crc16 ^= MbTable[n]
+//	}
+//	return crc16
+//}
 
+/**
+ * CRC-CCITT (0xFFFF)
+ *
+ * @param bytes
+ * @return
+ */
+func Crc16(data []byte) uint16 {
+
+	crc := 0xFFFF
+	polynomial := 0x1021
+	for _, b := range data {
+		for i := 0; i < 8; i++ {
+
+			var bit uint8
+			var c15 uint8
+
+			if (b >> (7 - i) & 1) == 1 {
+				bit = 1
+			}
+
+			if (crc >> 15 & 1) == 1 {
+				c15 = 1
+			}
+			crc <<= 1
+			if c15^bit != 0 {
+				crc ^= polynomial
+			}
+		}
+	}
+	crc &= 0xFFFF
+	return uint16(crc)
+
+}
 
 //func main(){
 //	//fmt.Printf("lanuch")

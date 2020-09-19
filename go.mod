@@ -20,6 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tiancaiamao/appdash v0.0.0-20181126055449-889f96f722a2
+	github.com/tiancaiamao/check v0.0.0-20161104095106-5ebf485998c8
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	go.uber.org/atomic v1.5.1
