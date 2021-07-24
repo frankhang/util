@@ -43,6 +43,8 @@ type Config struct {
 	Status           Status      `toml:"status" json:"status"`
 	Performance      Performance `toml:"performance" json:"performance"`
 	OpenTracing      OpenTracing `toml:"opentracing" json:"opentracing"`
+
+	TransferUrl string `toml:"transfer-url"  son:"transfer-url"`
 }
 
 // nullableBool defaults unset bool options to unset instead of false, which enables us to know if the user has set 2
